@@ -3,6 +3,7 @@
 import pandas as pd
 import os
 from torchvision.datasets import VisionDataset
+from typing import Any, Callable, Dict, List, Optional, Tuple
 from PIL import Image
 
 class Screeb2WordsDataset(VisionDataset):
@@ -13,10 +14,10 @@ class Screeb2WordsDataset(VisionDataset):
         self, 
         root: str, 
         ann_file: str,
-        transform: Optional[Callable] = tfm(H=256, W=144),
-        target_transform: Optional[Callable] = tokenizer,
-        split_dir:str,
-        split_type='TEST'
+        split_dir: str,
+        split_type: str = 'TEST', 
+        transform: Optional[Callable] = None,
+        target_transform: Optional[Callable] = None
     ) -> None:
         """
         Args:
@@ -29,17 +30,17 @@ class Screeb2WordsDataset(VisionDataset):
         split_dir (string): Directory contain how to split.
         split_type: split type, one of 'TRAIN', 'VAL', or 'TEST'
         """
-        super(targetDataset).__init__()
+        super(VisionDataset).__init__()
         self.root = root
         self.ann_file = ann_file
 
         assert split_type in {'TRAIN', 'VAL', 'TEST'}
         if split_type == 'TRAIN':
-            self.split = [int(line.strip()) for line in open(split_dir + 'train_screens.txt', 'r')]
+            split = [int(line.strip()) for line in open(split_dir + 'train_screens.txt', 'r')]
         elif split_type == 'VAL':
-            self.split = [int(line.strip()) for line in open(split_dir + 'dev.txt', 'r')]
+            split = [int(line.strip()) for line in open(split_dir + 'dev_screens.txt', 'r')]
         elif split_type == 'TEST':
-            self.split = [int(line.strip()) for line in open(split_dir + 'test_screens.txt', 'r')]
+            split = [int(line.strip()) for line in open(split_dir + 'test_screens.txt', 'r')]
         self.data = pd.read_csv(ann_file)
         self.data = self.data[self.data['screenId'].isin(split)]
         self.transform = transform
