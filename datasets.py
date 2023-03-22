@@ -34,10 +34,10 @@ class Screeb2WordsDataset(VisionDataset):
         self.root = root
         self.ann_file = ann_file
 
-        assert split_type in {'TRAIN', 'VAL', 'TEST'}
+        assert split_type in {'TRAIN', 'VALID', 'TEST'}
         if split_type == 'TRAIN':
             split = [int(line.strip()) for line in open(split_dir + 'train_screens.txt', 'r')]
-        elif split_type == 'VAL':
+        elif split_type == 'VALID':
             split = [int(line.strip()) for line in open(split_dir + 'dev_screens.txt', 'r')]
         elif split_type == 'TEST':
             split = [int(line.strip()) for line in open(split_dir + 'test_screens.txt', 'r')]

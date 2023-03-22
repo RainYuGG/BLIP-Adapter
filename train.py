@@ -6,6 +6,8 @@ import torch.optim as optim
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 from transformers import DistilBertTokenizer, AutoTokenizer
+# This is for the progress bar.
+from tqdm.auto import tqdm
 # ViT & Transformer
 # from vision_transformer import ViT
 # from text_transformer import Transformer
@@ -47,15 +49,17 @@ def tfm(H=256, W=144):
                             std=[0.229, 0.224, 0.225])
     ])
     return transform
-#tokenizer = AutoTokenizer.from_pretrained("bert-base-cased")
+# tokenizer = AutoTokenizer.from_pretrained("bert-base-cased")
 tokenizer = DistilBertTokenizer.from_pretrained('distilbert-base-uncased')
 
 # load dataset
 train_dataset = Screeb2WordsDataset(img_path, anntation_path, split_dir, 'TRAIN', tfm(224, 224), tokenizer)
 train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True)
-val_dataset = Screeb2WordsDataset(img_path, anntation_path, split_dir, 'VAL', tfm(224, 224), tokenizer)
-val_loader = DataLoader(val_dataset, batch_size=16)
+valid_dataset = Screeb2WordsDataset(img_path, anntation_path, split_dir, 'VALID', tfm(224, 224), tokenizer)
+valid_loader = DataLoader(valid_dataset, batch_size=16)
 
+
+#%%
 # TODO
 # initialize model
 # encoder = ViT().to(device)
@@ -63,17 +67,120 @@ val_loader = DataLoader(val_dataset, batch_size=16)
 
 # Define the loss function and optimizer
 criterion = nn.CrossEntropyLoss()
-params = list(encoder.parameters()) + list(decoder.parameters())
+# params = list(encoder.parameters()) + list(decoder.parameters())
 optimizer = optim.Adam(params, lr=learning_rate)
 
 
-num_epochs = 2
-for epoch in range(num_epochs):
-    # Train for one epoch
-    train_loss, train_acc = train(model, train_loader, criterion, optimizer)
-    # Evaluate on the validation set
-    val_loss, val_acc = evaluate(model, val_loader, criterion)
-    # Print the results
-    print(f"Epoch {epoch+1}/{num_epochs}, Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.4f}, Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.4f}")
+# Initialize trackers, these are not parameters and should not be changed
+stale = 0
+best_acc = 0
 
+for epoch in range(n_epochs):
+
+    # ---------- Training ----------
+    # Make sure the model is in train mode before training.
+    model.train()
+
+    # These are used to record information in training.
+    train_loss = []
+    train_accs = []
+
+    for batch in tqdm(train_loader):
+
+        # A batch consists of image data and corresponding labels.
+        imgs, labels = batch
+        #imgs = imgs.half()
+        #print(imgs.shape,labels.shape)
+
+        # Forward the data. (Make sure data and model are on the same device.)
+        logits = model(imgs.to(device))
+
+        # Calculate the cross-entropy loss.
+        # We don't need to apply softmax before computing cross-entropy as it is done automatically.
+        loss = criterion(logits, labels.to(device))
+
+        # Gradients stored in the parameters in the previous step should be cleared out first.
+        optimizer.zero_grad()
+
+        # Compute the gradients for parameters.
+        loss.backward()
+
+        # Clip the gradient norms for stable training.
+        grad_norm = nn.utils.clip_grad_norm_(model.parameters(), max_norm=10)
+
+        # Update the parameters with computed gradients.
+        optimizer.step()
+
+        # Compute the accuracy for current batch.
+        acc = (logits.argmax(dim=-1) == labels.to(device)).float().mean()
+
+        # Record the loss and accuracy.
+        train_loss.append(loss.item())
+        train_accs.append(acc)
+        
+    train_loss = sum(train_loss) / len(train_loss)
+    train_acc = sum(train_accs) / len(train_accs)
+
+    # Print the information.
+    print(f"[ Train | {epoch + 1:03d}/{n_epochs:03d} ] loss = {train_loss:.5f}, acc = {train_acc:.5f}")
+
+    # ---------- Validation ----------
+    # Make sure the model is in eval mode so that some modules like dropout are disabled and work normally.
+    model.eval()
+
+    # These are used to record information in validation.
+    valid_loss = []
+    valid_accs = []
+
+    # Iterate the validation set by batches.
+    for batch in tqdm(valid_loader):
+
+        # A batch consists of image data and corresponding labels.
+        imgs, labels = batch
+        #imgs = imgs.half()
+
+        # We don't need gradient in validation.
+        # Using torch.no_grad() accelerates the forward process.
+        with torch.no_grad():
+            logits = model(imgs.to(device))
+
+        # We can still compute the loss (but not the gradient).
+        loss = criterion(logits, labels.to(device))
+
+        # Compute the accuracy for current batch.
+        acc = (logits.argmax(dim=-1) == labels.to(device)).float().mean()
+
+        # Record the loss and accuracy.
+        valid_loss.append(loss.item())
+        valid_accs.append(acc)
+        #break
+
+    # The average loss and accuracy for entire validation set is the average of the recorded values.
+    valid_loss = sum(valid_loss) / len(valid_loss)
+    valid_acc = sum(valid_accs) / len(valid_accs)
+
+    # Print the information.
+    print(f"[ Valid | {epoch + 1:03d}/{n_epochs:03d} ] loss = {valid_loss:.5f}, acc = {valid_acc:.5f}")
+
+
+    # update logs
+    if valid_acc > best_acc:
+        with open(f"./{_exp_name}_log.txt","a"):
+            print(f"[ Valid | {epoch + 1:03d}/{n_epochs:03d} ] loss = {valid_loss:.5f}, acc = {valid_acc:.5f} -> best")
+    else:
+        with open(f"./{_exp_name}_log.txt","a"):
+            print(f"[ Valid | {epoch + 1:03d}/{n_epochs:03d} ] loss = {valid_loss:.5f}, acc = {valid_acc:.5f}")
+
+
+    # save models
+    if valid_acc > best_acc:
+        print(f"Best model found at epoch {epoch}, saving model")
+        torch.save(model.state_dict(), f"{_exp_name}_best.ckpt") # only save best to prevent output memory exceed error
+        best_acc = valid_acc
+        stale = 0
+    else:
+        stale += 1
+        if stale > patience:
+            print(f"No improvment {patience} consecutive epochs, early stopping")
+            break
 # %%
