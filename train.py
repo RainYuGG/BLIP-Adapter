@@ -7,8 +7,8 @@ import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 from transformers import DistilBertTokenizer, AutoTokenizer
 # ViT & Transformer
-from vision_transformer import ViT
-from text_transformer import Transformer
+# from vision_transformer import ViT
+# from text_transformer import Transformer
 
 # own dataset implement
 from datasets import Screeb2WordsDataset
@@ -23,7 +23,7 @@ anntation_path = screen2words_dir + '/screen_summaries.csv'
 split_dir = screen2words_dir + 'split/'
 
 # TODO
-vocab_file = os.path.join(data_folder, "vocab.pkl")
+# vocab_file = os.path.join(data_folder, "vocab.pkl")
 
 # set hyperparameters
 embed_size = 512
@@ -56,9 +56,10 @@ train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True)
 val_dataset = Screeb2WordsDataset(img_path, anntation_path, split_dir, 'VAL', tfm(224, 224), tokenizer)
 val_loader = DataLoader(val_dataset, batch_size=16)
 
+# TODO
 # initialize model
-encoder = ViT().to(device)
-decoder = Transformer(embed_size, hidden_size, vocab_size, num_layers, num_heads).to(device)
+# encoder = ViT().to(device)
+# decoder = Transformer(embed_size, hidden_size, vocab_size, num_layers, num_heads).to(device)
 
 # Define the loss function and optimizer
 criterion = nn.CrossEntropyLoss()
