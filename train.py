@@ -19,6 +19,7 @@ torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 
 #%% 
+# set data path
 img_path = '/data/rico/combined/'
 screen2words_dir = '/data/screen2words/'
 anntation_path = screen2words_dir + '/screen_summaries.csv'
@@ -28,10 +29,14 @@ split_dir = screen2words_dir + 'split/'
 # vocab_file = os.path.join(data_folder, "vocab.pkl")
 
 # set hyperparameters
+# "cuda" only when GPUs are available.
+device = "cuda" if torch.cuda.is_available() else "cpu"
+# parameter of the encoder and decoder
 embed_size = 512
 hidden_size = 512
 num_layers = 1
 num_heads = 8
+# parameter for training 
 num_epochs = 10
 batch_size = 128
 learning_rate = 0.0001
@@ -49,18 +54,20 @@ def tfm(H=256, W=144):
                             std=[0.229, 0.224, 0.225])
     ])
     return transform
+
+# Tokenizer define
 # tokenizer = AutoTokenizer.from_pretrained("bert-base-cased")
 tokenizer = DistilBertTokenizer.from_pretrained('distilbert-base-uncased')
 
 # load dataset
 train_dataset = Screeb2WordsDataset(img_path, anntation_path, split_dir, 'TRAIN', tfm(224, 224), tokenizer)
-train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True)
+train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=2)
 valid_dataset = Screeb2WordsDataset(img_path, anntation_path, split_dir, 'VALID', tfm(224, 224), tokenizer)
-valid_loader = DataLoader(valid_dataset, batch_size=16)
+valid_loader = DataLoader(valid_dataset, batch_size=batch_size, shuffle=True, num_workers=2)
 
 
 #%%
-# TODO
+# TODO model
 # initialize model
 # encoder = ViT().to(device)
 # decoder = Transformer(embed_size, hidden_size, vocab_size, num_layers, num_heads).to(device)
@@ -111,6 +118,7 @@ for epoch in range(n_epochs):
         # Update the parameters with computed gradients.
         optimizer.step()
 
+        # TODO check BLEU or others score
         # Compute the accuracy for current batch.
         acc = (logits.argmax(dim=-1) == labels.to(device)).float().mean()
 
@@ -183,4 +191,5 @@ for epoch in range(n_epochs):
         if stale > patience:
             print(f"No improvment {patience} consecutive epochs, early stopping")
             break
-# %%
+
+#%%
