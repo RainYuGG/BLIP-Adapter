@@ -15,9 +15,15 @@ Load the image from [Rico UI Screenshots and View Hierarchies dataset](https://s
 3. BLEU score check
 
 
-reference: 
+## reference
 
+#### dataset
 
+[Rico](https://interactionmining.org/rico)
+
+Screen2Words: [paper](https://arxiv.org/abs/2108.03353) / [code](https://github.com/google-research/google-research/tree/master/screen2words) / [dataset](https://github.com/google-research-datasets/screen2words)
+
+#### some sample code of captioning
 
 https://github.com/yurayli/image-caption-pytorch
 
