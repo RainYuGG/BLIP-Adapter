@@ -9,9 +9,10 @@ from PIL import Image
 
 # %%
 # set dataset path
-screen2words_dir = '/data/screen2words' 
-root = '/data/rico/combined'
-split_file_path = screen2words_dir + '/split'
+screen2words_dir = '/data/screen2words/'
+anntation_path = screen2words_dir + '/screen_summaries.csv'
+img_path = '/data/rico/combined/'
+split_file_path = screen2words_dir + 'split/'
 
 # %%
 # Transforms
@@ -59,12 +60,12 @@ class Screeb2WordsDataset(VisionDataset):
 
         assert split_type in {'TRAIN', 'VAL', 'TEST'}
         if split_type == 'TRAIN':
-            self.split = [int(line.strip()) for line in open(split_file + '/train_screens.txt', 'r')]
+            self.split = [int(line.strip()) for line in open(split_file + 'train_screens.txt', 'r')]
         elif split_type == 'VAL':
-            self.split = [int(line.strip()) for line in open(split_file + '/dev.txt', 'r')]
+            self.split = [int(line.strip()) for line in open(split_file + 'dev.txt', 'r')]
         elif split_type == 'TEST':
-            self.split = [int(line.strip()) for line in open(split_file + '/test_screens.txt', 'r')]
-        self.data = pd.read_csv(ann_file + '/screen_summaries.csv')
+            self.split = [int(line.strip()) for line in open(split_file + 'test_screens.txt', 'r')]
+        self.data = pd.read_csv(ann_file)
         self.data = self.data[self.data['screenId'].isin(split)]
         self.transform = transform
         #tokenizer
@@ -80,7 +81,7 @@ class Screeb2WordsDataset(VisionDataset):
         Returns:
             tuple: Tuple (image, target). target is a list of targets for the image.
         """
-        img = Image.open(self.imag_path + '/' + self.data['screenId'][index] + ',jpg')
+        img = Image.open(self.imag_path + self.data['screenId'][index] + '.jpg')
         if self.transform is not None:
             img = self.transform(img)
         target = self.data['summary'][index]
