@@ -12,56 +12,61 @@ class Screeb2WordsDataset(VisionDataset):
     """
     def __init__(
         self, 
-        root: str, 
-        ann_file: str,
+        img_dir: str, 
+        caption_file: str,
         split_dir: str,
         split_type: str = 'TEST', 
         transform: Optional[Callable] = None,
-        target_transform: Optional[Callable] = None
+        text_processor: Optional[Callable] = None
     ) -> None:
         """
         Args:
-        root (string): Root directory where images are downloaded to.
-        ann_file (string): Annotation Path to annotation file.
+        img_dir (string): img_dir directory where images are downloaded to.
+        caption_file (string): caption Path to caption file.
         transform (callable, optional): A function/transform that takes in a PIL image
             and returns a transformed version. E.g, ``transforms.PILToTensor``
-        target_transform (callable, optional): A function/transform that takes in the
-            target and transforms it. (tokenizer)
+        text_processor (callable, optional): A function/transform that add prompt in the beginnoing of the caption.
         split_dir (string): Directory contain how to split.
         split_type: split type, one of 'TRAIN', 'VAL', or 'TEST'
         """
         super(VisionDataset).__init__()
-        self.root = root
-        self.ann_file = ann_file
+        self.img_dir = img_dir
+        self.caption_file = caption_file
 
         assert split_type in {'TRAIN', 'VALID', 'TEST'}
         if split_type == 'TRAIN':
             split = [int(line.strip()) for line in open(split_dir + 'train_screens.txt', 'r')]
+            self.transform = transform['train']
         elif split_type == 'VALID':
             split = [int(line.strip()) for line in open(split_dir + 'dev_screens.txt', 'r')]
+            self.transform = transform['eval']
         elif split_type == 'TEST':
             split = [int(line.strip()) for line in open(split_dir + 'test_screens.txt', 'r')]
-        self.data = pd.read_csv(ann_file)
-        self.data = self.data[self.data['screenId'].isin(split)]
-        self.transform = transform
+            self.transform = transform['eval']
+        self.data = pd.read_csv(caption_file)
+        self.data = self.data[self.data['screenId'].isin(split)].reset_index(drop = True)
         #tokenizer
-        self.target_transform = target_transform
-    
+        self.text_processor = text_processor
+        
     def __len__(self) -> int:
         return len(self.data)
     
-    def __getitem__(self, index) -> Tuple[Any, Any]:
+    def __getitem__(self, index):
         """
         Args:
             index (int): Index
         Returns:
-            tuple: Tuple (image, target). target is a list of targets for the image.
+            tuple: dict (image, caption, id).
         """
-        img = Image.open(self.imag_path + self.data['screenId'][index] + '.jpg')
+        img = Image.open(self.img_dir + str(self.data['screenId'][index]) + '.jpg').convert("RGB")
         if self.transform is not None:
             img = self.transform(img)
-        target = self.data['summary'][index]
-        if self.target_transform is not None:
-            target = self.target_transform(target)  
+        caption = self.data['summary'][index]
+        if self.text_processor is not None:
+            caption = self.text_processor(caption)  
 
-        return img,target
+        return {
+            "image": img,
+            "text_input": caption,
+            "image_id": self.data['screenId'][index],
+        }
