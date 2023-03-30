@@ -44,7 +44,7 @@ class Screeb2WordsDataset(VisionDataset):
             split = [int(line.strip()) for line in open(split_dir + 'test_screens.txt', 'r')]
             self.transform = transform['eval']
         self.data = pd.read_csv(caption_file)
-        self.data = self.data[self.data['screenId'].isin(split)].reset_index(drop = True)
+        self.data = self.data[self.data['screenId'].isin(split)].reset_index(drop = True).head(50)
         #tokenizer
         self.text_processor = text_processor
         

@@ -30,6 +30,7 @@ split_dir = screen2words_dir + 'split/'
 # set hyperparameters
 # parameter for training 
 num_epochs = 10
+patience = 3
 batch_size = 8
 learning_rate = 0.0001
 weight_decay = 0.05
@@ -70,7 +71,8 @@ optimizer = torch.optim.AdamW(params=model.parameters(), lr=learning_rate) #, we
 
 # Initialize trackers, these are not parameters and should not be changed
 stale = 0
-best_acc = 0
+# best_acc = 0
+_exp_name = "sample"
 #%%
 for epoch in range(num_epochs):
 
@@ -112,10 +114,10 @@ for epoch in range(num_epochs):
         # train_accs.append(acc)
         
     train_loss = sum(train_loss) / len(train_loss)
-    train_acc = sum(train_accs) / len(train_accs)
+    # train_acc = sum(train_accs) / len(train_accs)
 
     # Print the information.
-    print(f"[ Train | {epoch + 1:03d}/{num_epochs:03d} ] loss = {train_loss:.5f}, acc = {train_acc:.5f}")
+    print(f"[ Train | {epoch + 1:03d}/{num_epochs:03d} ] loss = {train_loss:.5f}")
 
     # ---------- Validation ----------
     # Make sure the model is in eval mode so that some modules like dropout are disabled and work normally.
@@ -127,6 +129,7 @@ for epoch in range(num_epochs):
 
     # Iterate the validation set by batches.
     for batch in tqdm(valid_loader):
+        batch['image'] = batch['image'].to(device)
         # We don't need gradient in validation.
         # Using torch.no_grad() accelerates the forward process.
         with torch.no_grad():
@@ -146,24 +149,20 @@ for epoch in range(num_epochs):
 
     # The average loss and accuracy for entire validation set is the average of the recorded values.
     valid_loss = sum(valid_loss) / len(valid_loss)
-    valid_acc = sum(valid_accs) / len(valid_accs)
+    # valid_acc = sum(valid_accs) / len(valid_accs)
 
     # Print the information.
-    print(f"[ Valid | {epoch + 1:03d}/{num_epochs:03d} ] loss = {valid_loss:.5f}, acc = {valid_acc:.5f}")
+    print(f"[ Valid | {epoch + 1:03d}/{num_epochs:03d} ] loss = {valid_loss:.5f}")
 
     # update logs
-    if valid_acc > best_acc:
-        with open(f"./{_exp_name}_log.txt","a"):
-            print(f"[ Valid | {epoch + 1:03d}/{num_epochs:03d} ] loss = {valid_loss:.5f}, acc = {valid_acc:.5f} -> best")
-    else:
-        with open(f"./{_exp_name}_log.txt","a"):
-            print(f"[ Valid | {epoch + 1:03d}/{num_epochs:03d} ] loss = {valid_loss:.5f}, acc = {valid_acc:.5f}")
+    with open(f"./{_exp_name}_log.txt","a"):
+            print(f"[ Valid | {epoch + 1:03d}/{num_epochs:03d} ] loss = {valid_loss:.5f}")
 
     # save models
-    if valid_acc > best_acc:
+    if True: #valid_acc > best_acc:
         print(f"Best model found at epoch {epoch}, saving model")
-        torch.save(model.state_dict(), f"{_exp_name}_best.ckpt") # only save best to prevent output memory exceed error
-        best_acc = valid_acc
+        torch.save(model.state_dict(), f"{_exp_name,epoch}_best.ckpt") # only save best to prevent output memory exceed error
+        best_acc = 1#valid_acc
         stale = 0
     else:
         stale += 1
