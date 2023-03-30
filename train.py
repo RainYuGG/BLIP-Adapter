@@ -6,6 +6,7 @@ import torch.optim as optim
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 from transformers import DistilBertTokenizer, AutoTokenizer
+from lavis.models import load_model_and_preprocess
 # This is for the progress bar.
 from tqdm.auto import tqdm
 # ViT & Transformer
@@ -17,72 +18,61 @@ from datasets import Screeb2WordsDataset
 #%%
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
-
+# "cuda" only when GPUs are available.
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 #%% 
 # set data path
-img_path = '/data/rico/combined/'
+img_dir = '/data/rico/combined/'
 screen2words_dir = '/data/screen2words/'
-anntation_path = screen2words_dir + '/screen_summaries.csv'
+caption_file = screen2words_dir + '/screen_summaries.csv'
 split_dir = screen2words_dir + 'split/'
 
-# TODO
-# vocab_file = os.path.join(data_folder, "vocab.pkl")
-
 # set hyperparameters
-# "cuda" only when GPUs are available.
-device = "cuda" if torch.cuda.is_available() else "cpu"
-# parameter of the encoder and decoder
-embed_size = 512
-hidden_size = 512
-num_layers = 1
-num_heads = 8
 # parameter for training 
 num_epochs = 10
-batch_size = 128
+batch_size = 8
 learning_rate = 0.0001
+weight_decay = 0.05
 
 # %%
 # Transforms
 # All we need here is to resize the PIL image and transform it into Tensor.
-def tfm(H=256, W=144):
-    transform = transforms.Compose([
-        # Resize the image into a fixed shape (height = 256, width = 144)
-        transforms.Resize((H, W)),
-        # transforms.CenterCrop(),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                            std=[0.229, 0.224, 0.225])
-    ])
-    return transform
+# def tfm(H=256, W=144):
+#     transform = transforms.Compose([
+#         # Resize the image into a fixed shape (height = 256, width = 144)
+#         transforms.Resize((H, W)),
+#         # transforms.CenterCrop(),
+#         transforms.ToTensor(),
+#         transforms.Normalize(mean=[0.485, 0.456, 0.406],
+#                             std=[0.229, 0.224, 0.225])
+#     ])
+#     return transform
 
-# Tokenizer define
-# tokenizer = AutoTokenizer.from_pretrained("bert-base-cased")
-tokenizer = DistilBertTokenizer.from_pretrained('distilbert-base-uncased')
+
+# initialize model & tokenizer define
+# tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
+model, vis_processors, _ = load_model_and_preprocess(name="blip_caption", model_type="base_coco", is_eval=False, device=device)
 
 # load dataset
-train_dataset = Screeb2WordsDataset(img_path, anntation_path, split_dir, 'TRAIN', tfm(224, 224), tokenizer)
+train_dataset = Screeb2WordsDataset(img_dir, caption_file, split_dir, 'TRAIN', vis_processors, None)
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=2)
-valid_dataset = Screeb2WordsDataset(img_path, anntation_path, split_dir, 'VALID', tfm(224, 224), tokenizer)
+valid_dataset = Screeb2WordsDataset(img_dir, caption_file, split_dir, 'VALID', vis_processors, None)
 valid_loader = DataLoader(valid_dataset, batch_size=batch_size, shuffle=True, num_workers=2)
 
 
 #%%
-# TODO model
-# initialize model
-# encoder = ViT().to(device)
-# decoder = Transformer(embed_size, hidden_size, vocab_size, num_layers, num_heads).to(device)
 
 # Define the loss function and optimizer
-criterion = nn.CrossEntropyLoss()
+# criterion = nn.CrossEntropyLoss()
 # params = list(encoder.parameters()) + list(decoder.parameters())
-optimizer = optim.Adam(params, lr=learning_rate)
-
+# optimizer = optim.Adam(params, lr=learning_rate)
+optimizer = torch.optim.AdamW(params=model.parameters(), lr=learning_rate) #, weight_decay=weight_decay)
 
 # Initialize trackers, these are not parameters and should not be changed
 stale = 0
 best_acc = 0
-
-for epoch in range(n_epochs):
+#%%
+for epoch in range(num_epochs):
 
     # ---------- Training ----------
     # Make sure the model is in train mode before training.
@@ -93,22 +83,17 @@ for epoch in range(n_epochs):
     train_accs = []
 
     for batch in tqdm(train_loader):
-
-        # A batch consists of image data and corresponding labels.
-        imgs, labels = batch
-        #imgs = imgs.half()
-        #print(imgs.shape,labels.shape)
-
+        batch['image'] = batch['image'].to(device)
         # Forward the data. (Make sure data and model are on the same device.)
-        logits = model(imgs.to(device))
+        output = model(batch)
 
         # Calculate the cross-entropy loss.
         # We don't need to apply softmax before computing cross-entropy as it is done automatically.
-        loss = criterion(logits, labels.to(device))
-
+        # bert using gelu and Cross Entropy for loss function automatically.
+        loss = output.loss
         # Gradients stored in the parameters in the previous step should be cleared out first.
         optimizer.zero_grad()
-
+        
         # Compute the gradients for parameters.
         loss.backward()
 
@@ -120,17 +105,17 @@ for epoch in range(n_epochs):
 
         # TODO check BLEU or others score
         # Compute the accuracy for current batch.
-        acc = (logits.argmax(dim=-1) == labels.to(device)).float().mean()
+        # acc = (logits.argmax(dim=-1) == caption.to(device)).float().mean()
 
         # Record the loss and accuracy.
         train_loss.append(loss.item())
-        train_accs.append(acc)
+        # train_accs.append(acc)
         
     train_loss = sum(train_loss) / len(train_loss)
     train_acc = sum(train_accs) / len(train_accs)
 
     # Print the information.
-    print(f"[ Train | {epoch + 1:03d}/{n_epochs:03d} ] loss = {train_loss:.5f}, acc = {train_acc:.5f}")
+    print(f"[ Train | {epoch + 1:03d}/{num_epochs:03d} ] loss = {train_loss:.5f}, acc = {train_acc:.5f}")
 
     # ---------- Validation ----------
     # Make sure the model is in eval mode so that some modules like dropout are disabled and work normally.
@@ -142,25 +127,21 @@ for epoch in range(n_epochs):
 
     # Iterate the validation set by batches.
     for batch in tqdm(valid_loader):
-
-        # A batch consists of image data and corresponding labels.
-        imgs, labels = batch
-        #imgs = imgs.half()
-
         # We don't need gradient in validation.
         # Using torch.no_grad() accelerates the forward process.
         with torch.no_grad():
-            logits = model(imgs.to(device))
+            # logits = model(imgs.to(device))
+            output = model(batch)
 
         # We can still compute the loss (but not the gradient).
-        loss = criterion(logits, labels.to(device))
+        loss = output.loss
 
         # Compute the accuracy for current batch.
-        acc = (logits.argmax(dim=-1) == labels.to(device)).float().mean()
+        # acc = (logits.argmax(dim=-1) == caption.to(device)).float().mean()
 
         # Record the loss and accuracy.
         valid_loss.append(loss.item())
-        valid_accs.append(acc)
+        # valid_accs.append(acc)
         #break
 
     # The average loss and accuracy for entire validation set is the average of the recorded values.
@@ -168,17 +149,15 @@ for epoch in range(n_epochs):
     valid_acc = sum(valid_accs) / len(valid_accs)
 
     # Print the information.
-    print(f"[ Valid | {epoch + 1:03d}/{n_epochs:03d} ] loss = {valid_loss:.5f}, acc = {valid_acc:.5f}")
-
+    print(f"[ Valid | {epoch + 1:03d}/{num_epochs:03d} ] loss = {valid_loss:.5f}, acc = {valid_acc:.5f}")
 
     # update logs
     if valid_acc > best_acc:
         with open(f"./{_exp_name}_log.txt","a"):
-            print(f"[ Valid | {epoch + 1:03d}/{n_epochs:03d} ] loss = {valid_loss:.5f}, acc = {valid_acc:.5f} -> best")
+            print(f"[ Valid | {epoch + 1:03d}/{num_epochs:03d} ] loss = {valid_loss:.5f}, acc = {valid_acc:.5f} -> best")
     else:
         with open(f"./{_exp_name}_log.txt","a"):
-            print(f"[ Valid | {epoch + 1:03d}/{n_epochs:03d} ] loss = {valid_loss:.5f}, acc = {valid_acc:.5f}")
-
+            print(f"[ Valid | {epoch + 1:03d}/{num_epochs:03d} ] loss = {valid_loss:.5f}, acc = {valid_acc:.5f}")
 
     # save models
     if valid_acc > best_acc:
