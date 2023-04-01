@@ -1,4 +1,4 @@
-# s2w
+# image captioning based on Screen2Words
 image-to-text on Android screenshot
 
 ## Datasets.py
@@ -11,8 +11,12 @@ Load the image from [Rico UI Screenshots and View Hierarchies dataset](https://s
 #### TODO:
 
 1. ~~vocabulary preprocessing~~ (use tokenizer)
-2. model concatenate (ViT encoder& Text Transformer decoder)
-3. BLEU score check
+2. ~~model concatenate (ViT encoder& Text Transformer decoder)~~ (use blip)
+3. Each image should select once and randomly choose one of the captions. (Instead of five captions and five the same images)
+4. BLEU score check & how to eval metric and save model
+   * Due to five captions for an image, may select different captions at each time.
+   * In validated step, Does it need to calculate loss? Or just generates captions and calculates the CIDEr, BLEU score for saving model
+
 
 
 ## reference
