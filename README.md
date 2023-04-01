@@ -1,4 +1,4 @@
-# s2w
+# image captioning based on Screen2Words
 image-to-text on Android screenshot
 
 ## Datasets.py
