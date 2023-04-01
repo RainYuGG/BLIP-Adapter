@@ -11,8 +11,8 @@ Load the image from [Rico UI Screenshots and View Hierarchies dataset](https://s
 #### TODO:
 
 1. ~~vocabulary preprocessing~~ (use tokenizer)
-2. model concatenate (ViT encoder& Text Transformer decoder)
-3. BLEU score check
+2. ~~model concatenate (ViT encoder& Text Transformer decoder)~~ (use blip)
+3. BLEU score check & how to eval metric and save model
 
 
 ## reference
