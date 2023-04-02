@@ -7,6 +7,7 @@ import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 from transformers import DistilBertTokenizer, AutoTokenizer
 from lavis.models import load_model_and_preprocess
+import random
 # This is for the progress bar.
 from tqdm.auto import tqdm
 # ViT & Transformer
@@ -29,9 +30,9 @@ split_dir = screen2words_dir + 'split/'
 
 # set hyperparameters
 # parameter for training 
-num_epochs = 10
+num_epochs = 20
 patience = 3
-batch_size = 8
+batch_size = 32
 learning_rate = 0.0001
 weight_decay = 0.05
 
@@ -57,8 +58,8 @@ model, vis_processors, _ = load_model_and_preprocess(name="blip_caption", model_
 # load dataset
 train_dataset = Screeb2WordsDataset(img_dir, caption_file, split_dir, 'TRAIN', vis_processors, None)
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=2)
-valid_dataset = Screeb2WordsDataset(img_dir, caption_file, split_dir, 'VALID', vis_processors, None)
-valid_loader = DataLoader(valid_dataset, batch_size=batch_size, shuffle=True, num_workers=2)
+# valid_dataset = Screeb2WordsDataset(img_dir, caption_file, split_dir, 'VALID', vis_processors, None)
+# valid_loader = DataLoader(valid_dataset, batch_size=batch_size, shuffle=True, num_workers=2)
 
 
 #%%
@@ -72,7 +73,7 @@ optimizer = torch.optim.AdamW(params=model.parameters(), lr=learning_rate) #, we
 # Initialize trackers, these are not parameters and should not be changed
 stale = 0
 # best_acc = 0
-_exp_name = "sample"
+_exp_name = "no_metric"
 #%%
 for epoch in range(num_epochs):
 
@@ -86,6 +87,9 @@ for epoch in range(num_epochs):
 
     for batch in tqdm(train_loader):
         batch['image'] = batch['image'].to(device)
+        # print(batch['image_id'],batch['text_input'])
+        batch['text_input'] = batch['text_input'][random.randint(0,4)]
+
         # Forward the data. (Make sure data and model are on the same device.)
         output = model(batch)
 
@@ -100,7 +104,7 @@ for epoch in range(num_epochs):
         loss.backward()
 
         # Clip the gradient norms for stable training.
-        grad_norm = nn.utils.clip_grad_norm_(model.parameters(), max_norm=10)
+        grad_norm = nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
 
         # Update the parameters with computed gradients.
         optimizer.step()
@@ -124,50 +128,50 @@ for epoch in range(num_epochs):
     model.eval()
 
     # These are used to record information in validation.
-    valid_loss = []
-    valid_accs = []
+    # valid_loss = []
+    # valid_accs = []
 
-    # Iterate the validation set by batches.
-    for batch in tqdm(valid_loader):
-        batch['image'] = batch['image'].to(device)
-        # We don't need gradient in validation.
-        # Using torch.no_grad() accelerates the forward process.
-        with torch.no_grad():
-            # logits = model(imgs.to(device))
-            output = model(batch)
+    # # Iterate the validation set by batches.
+    # for batch in tqdm(valid_loader):
+    #     batch['image'] = batch['image'].to(device)
+    #     # We don't need gradient in validation.
+    #     # Using torch.no_grad() accelerates the forward process.
+    #     with torch.no_grad():
+    #         # logits = model(imgs.to(device))
+    #         output = model(batch)
 
-        # We can still compute the loss (but not the gradient).
-        loss = output.loss
+    #     # We can still compute the loss (but not the gradient).
+    #     loss = output.loss
 
-        # Compute the accuracy for current batch.
-        # acc = (logits.argmax(dim=-1) == caption.to(device)).float().mean()
+    #     # Compute the accuracy for current batch.
+    #     # acc = (logits.argmax(dim=-1) == caption.to(device)).float().mean()
 
-        # Record the loss and accuracy.
-        valid_loss.append(loss.item())
-        # valid_accs.append(acc)
-        #break
+    #     # Record the loss and accuracy.
+    #     valid_loss.append(loss.item())
+    #     # valid_accs.append(acc)
+    #     #break
 
-    # The average loss and accuracy for entire validation set is the average of the recorded values.
-    valid_loss = sum(valid_loss) / len(valid_loss)
-    # valid_acc = sum(valid_accs) / len(valid_accs)
+    # # The average loss and accuracy for entire validation set is the average of the recorded values.
+    # valid_loss = sum(valid_loss) / len(valid_loss)
+    # # valid_acc = sum(valid_accs) / len(valid_accs)
 
-    # Print the information.
-    print(f"[ Valid | {epoch + 1:03d}/{num_epochs:03d} ] loss = {valid_loss:.5f}")
+    # # Print the information.
+    # print(f"[ Valid | {epoch + 1:03d}/{num_epochs:03d} ] loss = {valid_loss:.5f}")
 
-    # update logs
-    with open(f"./{_exp_name}_log.txt","a"):
-            print(f"[ Valid | {epoch + 1:03d}/{num_epochs:03d} ] loss = {valid_loss:.5f}")
+    # # update logs
+    # with open(f"./{_exp_name}_log.txt","a"):
+    #         print(f"[ Valid | {epoch + 1:03d}/{num_epochs:03d} ] loss = {valid_loss:.5f}")
 
     # save models
-    if True: #valid_acc > best_acc:
-        print(f"Best model found at epoch {epoch}, saving model")
-        torch.save(model.state_dict(), f"{_exp_name,epoch}_best.ckpt") # only save best to prevent output memory exceed error
-        best_acc = 1#valid_acc
-        stale = 0
-    else:
-        stale += 1
-        if stale > patience:
-            print(f"No improvment {patience} consecutive epochs, early stopping")
-            break
+if True: #valid_acc > best_acc:
+    print(f"Best model found at epoch {num_epochs}, saving model")
+    torch.save(model.state_dict(), f"b{batch_size}_e{num_epochs}_{_exp_name}.ckpt") # only save best to prevent output memory exceed error
+    best_acc = 1#valid_acc
+    stale = 0
+    # else:
+    #     stale += 1
+    #     if stale > patience:
+    #         print(f"No improvment {patience} consecutive epochs, early stopping")
+    #         break
 
 #%%

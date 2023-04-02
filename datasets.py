@@ -5,7 +5,7 @@ import os
 from torchvision.datasets import VisionDataset
 from typing import Any, Callable, Dict, List, Optional, Tuple
 from PIL import Image
-import random
+
 
 class Screeb2WordsDataset(VisionDataset):
     """
@@ -60,12 +60,12 @@ class Screeb2WordsDataset(VisionDataset):
             tuple: dict (image, caption, id).
         """
         img = Image.open(self.img_dir + str(self.data['screenId'][index]) + '.jpg').convert("RGB")
+        # if self.split_type == 'TRAIN':
+        #     caption = self.data['summary'][index][random.randint(0, 4)]
+        # else:
+        caption = self.data['summary'][index]
         if self.transform is not None:
             img = self.transform(img)
-        if self.split_type == 'TRAIN':
-            caption = self.data['summary'][index][random.randint(0, 4)]
-        else:
-            caption = self.data['summary'][index]
         if self.text_processor is not None:
             caption = self.text_processor(caption)  
 
