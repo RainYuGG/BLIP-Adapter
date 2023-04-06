@@ -31,13 +31,15 @@ split_dir = screen2words_dir + 'split/'
 
 # set hyperparameters
 batch_size = 32
-modelckpt = 'b32_e20_no_metric.ckpt'
+modelckpt = './reslut/b32_e4-15_bleu.ckpt'
 
 # initialize model & tokenizer define
 # tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
+# model, vis_processors, _ = load_model_and_preprocess(name="blip_pretrain", model_type = 'base', is_eval=True, device=device)
 model, vis_processors, _ = load_model_and_preprocess(name="blip_caption", model_type="base_coco", is_eval=True, device=device)
 model.load_state_dict(torch.load(modelckpt))
 
+#%%
 # load dataset
 test_dataset = Screeb2WordsDataset(img_dir, caption_file, split_dir, 'TEST', vis_processors, None)
 test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=2)
@@ -56,7 +58,13 @@ for batch in tqdm(test_loader):
 print('ref:', len(caption_references))
 print('ref:', len(caption_references[0]))
 print('pred:', len(caption_predictions))
-print('id:', batch['image_id'])
+# print('id:', batch['image_id'])
 #%%    
-res = score.calculate_bleu(caption_predictions, caption_references)
+res = score.calculate_score(caption_predictions, caption_references, 'bleu')
+print(res)
+
+res = score.calculate_score(caption_predictions, caption_references, 'rouge')
+print(res)
+
+res = score.calculate_score(caption_predictions, caption_references, 'meteor')
 print(res)
