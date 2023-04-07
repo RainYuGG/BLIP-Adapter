@@ -16,10 +16,11 @@ Load the image from [Rico UI Screenshots and View Hierarchies dataset](https://s
 4. ~~BLEU score check & how to eval metric and save model~~
    * ~~Due to five captions for an image, may select different captions at each time.~~
    * In validated/test step, Does it need to calculate loss? Or just generates captions and calculates the CIDEr, BLEU score for saving model
-5. add CIDEr score check
+5. add CIDEr score check [COCOEval](https://blog.csdn.net/weixin_41848012/article/details/121254472)
 6. batch size issue
 change first conv2d and change input from 384*384 to 224*224 
 original image resize 1920*1080 -> 960*540
+
 7. learning rate scheduler
 8. dataset implementation rethink
 
