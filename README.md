@@ -18,8 +18,14 @@ Load the image from [Rico UI Screenshots and View Hierarchies dataset](https://s
    * In validated/test step, Does it need to calculate loss? Or just generates captions and calculates the CIDEr, BLEU score for saving model
 5. add CIDEr score check [COCOEval](https://blog.csdn.net/weixin_41848012/article/details/121254472)
 6. batch size issue
-change first conv2d and change input from 384*384 to 224*224 
-original image resize 1920*1080 -> 960*540
+   * change input from 384\*384 to 224\*224 and change first conv2d output to fit original featured map size.
+   * original image resize 1920\*1080 -> 960\*540
+   
+   both these implementation don't reduce CUDA memory usage. 
+still only can use 32 batch size.
+
+   simplily change input from 384\*384 to 224\*224 can work. 
+I think it's due to the intermediate featured map size reducing
 
 7. learning rate scheduler
 8. dataset implementation rethink
