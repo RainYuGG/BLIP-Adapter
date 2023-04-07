@@ -7,6 +7,10 @@ Implement the VisionDataset.
 
 Load the image from [Rico UI Screenshots and View Hierarchies dataset](https://storage.googleapis.com/crowdstf-rico-uiuc-4540/rico_dataset_v0.1/unique_uis.tar.gz) and the summary from [Screen2Words dataset](https://github.com/google-research-datasets/screen2words), and deal with the same split within Screen2Words.
 
+## Install coco-caption
+
+Please check the README file in the `coco_caption` folder. 
+Remember to install `coco_caption` first to properly obtain the CIDEr Score in `eval.py`.
 
 #### TODO:
 
