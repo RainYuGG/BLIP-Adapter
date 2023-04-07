@@ -8,9 +8,54 @@ Implement the VisionDataset.
 Load the image from [Rico UI Screenshots and View Hierarchies dataset](https://storage.googleapis.com/crowdstf-rico-uiuc-4540/rico_dataset_v0.1/unique_uis.tar.gz) and the summary from [Screen2Words dataset](https://github.com/google-research-datasets/screen2words), and deal with the same split within Screen2Words.
 
 ## Install coco-caption
+To properly obtain the CIDEr Score in `eval.py`, you need to install the coco_caption package. Follow the steps below to install it:
+### 1. Install the model
+Clone the `coco_caption` repository and navigate to the cloned directory:
+```bash 
+git clone https://github.com/ruotianluo/coco-caption.git coco_caption
+cd coco_caption
+bash get_stanford_models.sh
+pip install gensim
+```
+### 2. Install java
+1. Download the latest version of Java 8 from the Oracle website: https://www.oracle.com/java/technologies/downloads/#java8
+2. Copy the downloaded file to your system and extract it with the following commands:
+```bash
+sudo cp jdk-xxxxx_linux-x64_bin.tar.gz /opt
+cd /opt
+sudo mkdir java
+sudo chown [user_name] java
+sudo chgrp [user_name] java
+sudo tar -zxvf jdk-xxxxx_linux-x64_bin.tar.gz -C /opt/java
+```
+3. Set the environment variable in `~/.bashrc` by adding the following lines:
+```
+#set java environment
+export JAVA_HOME=/opt/java/jdk1.8.xx
+export PATH=${JAVA_HOME}/bin:${PATH}
+```
+4. Source the `.bashrc` file to apply the changes:
+```bash
+source ~/.bashrc
+```
 
-Please check the README file in the `coco_caption` folder. 
-Remember to install `coco_caption` first to properly obtain the CIDEr Score in `eval.py`.
+5. Verify that Java is installed by checking the version:
+
+```bash
+java -version
+```
+### 3. Install WMD
+To install WMD, run the following command:
+```bash
+bash get_google_word2vec_model.sh
+```
+
+### 4. Demo
+To run the demo, execute the following command:
+```bash
+python Scorer.py
+```
+Make sure to run the demo after the installation to confirm that everything works as expected.
 
 #### TODO:
 

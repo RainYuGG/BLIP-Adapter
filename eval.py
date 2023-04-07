@@ -16,9 +16,7 @@ from tqdm.auto import tqdm
 
 # own dataset implement
 from s2w_dataset import Screeb2WordsDataset
-import score
-
-from coco_caption.Scorer import Scorer
+import Scorer
 
 DEBUG = True
 
@@ -54,7 +52,7 @@ caption_predictions = []
 caption_references = []
 for batch in tqdm(test_loader):
     img_input = {"image": batch['image'].to(device)}
-    caption_references += score.transpose(batch['text_input'])
+    caption_references += Scorer.transpose(batch['text_input'])
     # Using torch.no_grad() accelerates the forward process.
     with torch.no_grad():
         caption_pred = model.generate(img_input)
@@ -69,15 +67,15 @@ print('ref:', len(caption_references[0]))
 print('pred:', len(caption_predictions))
 # print('id:', batch['image_id'])
 #%%    
-res = score.calculate_score(caption_predictions, caption_references, 'bleu')
+res = Scorer.calculate_score(caption_predictions, caption_references, 'bleu')
 print(res)
 
-res = score.calculate_score(caption_predictions, caption_references, 'rouge')
+res = Scorer.calculate_score(caption_predictions, caption_references, 'rouge')
 print(res)
 
-res = score.calculate_score(caption_predictions, caption_references, 'meteor')
+res = Scorer.calculate_score(caption_predictions, caption_references, 'meteor')
 print(res)
 
 # Add scorer to calculate the CIDEr and other scores.
-scorer = Scorer(caption_predictions, caption_references)
+scorer = Scorer.Scorers(caption_predictions, caption_references)
 scorer.compute_scores()
