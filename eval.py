@@ -1,5 +1,6 @@
 #%%
 import os
+import sys
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -15,7 +16,9 @@ from tqdm.auto import tqdm
 
 # own dataset implement
 from s2w_dataset import Screeb2WordsDataset
-import score
+import Scorer
+
+DEBUG = True
 
 #%%
 torch.backends.cudnn.deterministic = True
@@ -31,7 +34,7 @@ split_dir = screen2words_dir + 'split/'
 
 # set hyperparameters
 batch_size = 32
-modelckpt = './reslut/b32_e4-15_bleu.ckpt'
+modelckpt = '/home/chingyu/screen2words/ckpt/b32_e4-15_bleu.ckpt'
 
 # initialize model & tokenizer define
 # tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
@@ -49,22 +52,30 @@ caption_predictions = []
 caption_references = []
 for batch in tqdm(test_loader):
     img_input = {"image": batch['image'].to(device)}
-    caption_references += score.transpose(batch['text_input'])
+    caption_references += Scorer.transpose(batch['text_input'])
     # Using torch.no_grad() accelerates the forward process.
     with torch.no_grad():
         caption_pred = model.generate(img_input)
         caption_predictions += caption_pred
+    
+    # Only run one epoch if DEBUG is true
+    if DEBUG:
+        break
 #%%
 print('ref:', len(caption_references))
 print('ref:', len(caption_references[0]))
 print('pred:', len(caption_predictions))
 # print('id:', batch['image_id'])
 #%%    
-res = score.calculate_score(caption_predictions, caption_references, 'bleu')
+res = Scorer.calculate_score(caption_predictions, caption_references, 'bleu')
 print(res)
 
-res = score.calculate_score(caption_predictions, caption_references, 'rouge')
+res = Scorer.calculate_score(caption_predictions, caption_references, 'rouge')
 print(res)
 
-res = score.calculate_score(caption_predictions, caption_references, 'meteor')
+res = Scorer.calculate_score(caption_predictions, caption_references, 'meteor')
 print(res)
+
+# Add scorer to calculate the CIDEr and other scores.
+scorer = Scorer.Scorers(caption_predictions, caption_references)
+scorer.compute_scores()
