@@ -1,5 +1,6 @@
 #%%
 import os
+import sys
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -17,6 +18,10 @@ from tqdm.auto import tqdm
 from s2w_dataset import Screeb2WordsDataset
 import score
 
+from coco_caption.Scorer import Scorer
+
+DEBUG = True
+
 #%%
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
@@ -31,7 +36,7 @@ split_dir = screen2words_dir + 'split/'
 
 # set hyperparameters
 batch_size = 32
-modelckpt = './reslut/b32_e4-15_bleu.ckpt'
+modelckpt = '/home/chingyu/screen2words/ckpt/b32_e4-15_bleu.ckpt'
 
 # initialize model & tokenizer define
 # tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
@@ -54,6 +59,10 @@ for batch in tqdm(test_loader):
     with torch.no_grad():
         caption_pred = model.generate(img_input)
         caption_predictions += caption_pred
+    
+    # Only run one epoch if DEBUG is true
+    if DEBUG:
+        break
 #%%
 print('ref:', len(caption_references))
 print('ref:', len(caption_references[0]))
@@ -68,3 +77,7 @@ print(res)
 
 res = score.calculate_score(caption_predictions, caption_references, 'meteor')
 print(res)
+
+# Add scorer to calculate the CIDEr and other scores.
+scorer = Scorer(caption_predictions, caption_references)
+scorer.compute_scores()
