@@ -11,7 +11,7 @@ import random
 from tqdm.auto import tqdm
 # own dataset & scorer utils implement
 from s2w_dataset import Screeb2WordsDataset
-import Scorer
+import scorer
 
 #%%
 seed = 1126
@@ -115,13 +115,13 @@ for epoch in range(num_epochs):
     # Iterate the validation set by batches.
     for batch in tqdm(valid_loader):
         img_input = {"image": batch['image'].to(device)}
-        caption_references += Scorer.transpose(batch['text_input'])
+        caption_references += scorer.transpose(batch['text_input'])
         # Using torch.no_grad() accelerates the forward process.
         with torch.no_grad():
             caption_pred = model.generate(img_input)
             caption_predictions += caption_pred
-    valid_bleu = Scorer.calculate_score(caption_predictions, caption_references, 'bleu')
-    cocoeval = Scorer.Scorers(caption_predictions, caption_references)
+    valid_bleu = scorer.calculate_score(caption_predictions, caption_references, 'bleu')
+    cocoeval = scorer.Scorers(caption_predictions, caption_references)
     total_score = cocoeval.compute_scores()
 
     # Print the information.
