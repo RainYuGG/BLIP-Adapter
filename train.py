@@ -3,14 +3,23 @@ import os
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
+from transformers import get_linear_schedule_with_warmup, get_cosine_schedule_with_warmup
 from lavis.models import load_model_and_preprocess
+import numpy as np
 import random
 # This is for the progress bar.
 from tqdm.auto import tqdm
-# own dataset & score utils implement
+# own dataset & scorer utils implement
 from s2w_dataset import Screeb2WordsDataset
-import score
+import Scorer
+
 #%%
+seed = 1126
+# set random seed
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed(seed)
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 # "cuda" only when GPUs are available.
@@ -26,41 +35,46 @@ split_dir = screen2words_dir + 'split/'
 # set hyperparameters
 # parameter for training 
 num_epochs = 100
-patience = 20
-batch_size = 16
-learning_rate = 1e-4
+patience = 30
+batch_size = 32
+learning_rate = 1e-3
 weight_decay = 0.05
 # Initialize trackers, these are not parameters and should not be changed
 stale = 0
 best_bleu = 0.0
-_exp_name = "bleu"
+_exp_name = "bleu_warmup_tfm_1e-3_e100"
 
 # %%
 model, vis_processors, _ = load_model_and_preprocess(name="blip_caption", model_type="base_coco", is_eval=False, device=device)
+#modelckpt = '/home/chingyu/image-captioning-based-on-Screen2Words/ckpt/b32_e4-15_bleu.ckpt'
+#model.load_state_dict(torch.load(modelckpt))
 
 # # change input size from 384*384 to 224*224
 # model.visual_encoder.patch_embed.proj = nn.Conv2d(3, 768, kernel_size=(9, 9), stride=(9, 9))
 # model.visual_encoder.patch_embed.img_size = (224, 224)
-# model.to(device)
+model.to(device)
 
-# # %%
-# # training preprocessor
-# import tfm
-# vis_processors = tfm.tfm()
 
-# load dataset
-train_dataset = Screeb2WordsDataset(img_dir, caption_file, split_dir, 'TRAIN', vis_processors, None)
-train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=2)
-valid_dataset = Screeb2WordsDataset(img_dir, caption_file, split_dir, 'VALID', vis_processors, None)
-valid_loader = DataLoader(valid_dataset, batch_size=batch_size, shuffle=True, num_workers=2)
-
+# %%
+# training preprocessor
+import tfm
+vis_processors = tfm.tfm(image_size = 384)
 
 #%%
+# load dataset
+train_dataset = Screeb2WordsDataset(img_dir, caption_file, split_dir, 'TRAIN', vis_processors, None)
+train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False, num_workers=2)
+valid_dataset = Screeb2WordsDataset(img_dir, caption_file, split_dir, 'VALID', vis_processors, None)
+valid_loader = DataLoader(valid_dataset, batch_size=batch_size, shuffle=False, num_workers=2)
 
+#%%
 # Define the loss function and optimizer
 # criterion = nn.CrossEntropyLoss()
 # optimizer = optim.Adam(params, lr=learning_rate)
 optimizer = torch.optim.AdamW(params=model.parameters(), lr=learning_rate) #, weight_decay=weight_decay)
+num_training_steps = len(train_loader) * num_epochs
+num_warmup_steps = int(0.1 * num_training_steps)
+scheduler = get_cosine_schedule_with_warmup(optimizer, num_warmup_steps=num_warmup_steps, num_training_steps=num_training_steps)
 
 #%%
 for epoch in range(num_epochs):
@@ -84,7 +98,7 @@ for epoch in range(num_epochs):
         # grad_norm = nn.utils.clip_grad_norm_(model.parameters(), max_norm=10.0)
         # Update the parameters with computed gradients.
         optimizer.step()
-        # TODO check BLEU or others score
+        scheduler.step()
         
         # Record the loss and accuracy.
         train_loss.append(loss.item())
@@ -101,26 +115,28 @@ for epoch in range(num_epochs):
     # Iterate the validation set by batches.
     for batch in tqdm(valid_loader):
         img_input = {"image": batch['image'].to(device)}
-        caption_references += score.transpose(batch['text_input'])
+        caption_references += Scorer.transpose(batch['text_input'])
         # Using torch.no_grad() accelerates the forward process.
         with torch.no_grad():
             caption_pred = model.generate(img_input)
             caption_predictions += caption_pred
-    valid_bleu = score.calculate_score(caption_predictions, caption_references)
+    valid_bleu = Scorer.calculate_score(caption_predictions, caption_references, 'bleu')
+    cocoeval = Scorer.Scorers(caption_predictions, caption_references)
+    total_score = cocoeval.compute_scores()
+
     # Print the information.
-    print(f"[ Valid | {epoch + 1:03d}/{num_epochs:03d} ] bleu = {valid_bleu:.5f}")
+    print(f"[ Valid | {epoch + 1:03d}/{num_epochs:03d} ] bleu = {valid_bleu:.5f}, CIDEr = {total_score['CIDEr']:.5f}, RougeL = {total_score['ROUGE_L']:.5f}")
     # update logs
     if valid_bleu > best_bleu:
-        with open(f"./log/{_exp_name}_log.txt","a") as f:
+        with open(f"./log/{_exp_name}_bs{batch_size}_log.txt","a") as f:
             f.write(f"[ Valid | {epoch + 1:03d}/{num_epochs:03d} ] bleu = {valid_bleu:.5f} -> best\n")
-            f.write(f"save in b{batch_size}_e{epoch}_{_exp_name}.ckpt")
     else:
-        with open(f"./log/{_exp_name}_log.txt","a") as f:
+        with open(f"./log/{_exp_name}_bs{batch_size}_log.txt","a") as f:
             f.write(f"[ Valid | {epoch + 1:03d}/{num_epochs:03d} ] bleu = {valid_bleu:.5f}\n")
     # save models
     if valid_bleu > best_bleu:
         print(f"Best model found at epoch {epoch}, saving model")
-        torch.save(model.state_dict(), f"b{batch_size}_e{epoch}_{_exp_name}.ckpt") # only save best to prevent output memory exceed error
+        torch.save(model.state_dict(), f"{_exp_name}_bs{batch_size}.ckpt") # only save best to prevent output memory exceed error
         best_bleu = valid_bleu
         stale = 0
     else:

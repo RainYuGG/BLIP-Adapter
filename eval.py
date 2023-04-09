@@ -18,7 +18,7 @@ from tqdm.auto import tqdm
 from s2w_dataset import Screeb2WordsDataset
 import Scorer
 
-DEBUG = True
+DEBUG = False
 
 #%%
 torch.backends.cudnn.deterministic = True
@@ -33,14 +33,13 @@ caption_file = screen2words_dir + '/screen_summaries.csv'
 split_dir = screen2words_dir + 'split/'
 
 # set hyperparameters
-batch_size = 32
-modelckpt = '/home/chingyu/screen2words/ckpt/b32_e4-15_bleu.ckpt'
+batch_size = 128
 
 # initialize model & tokenizer define
-# tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
-# model, vis_processors, _ = load_model_and_preprocess(name="blip_pretrain", model_type = 'base', is_eval=True, device=device)
 model, vis_processors, _ = load_model_and_preprocess(name="blip_caption", model_type="base_coco", is_eval=True, device=device)
+modelckpt = '/home/chingyu/image-captioning-based-on-Screen2Words/ckpt/b32_e4-15_bleu.ckpt'
 model.load_state_dict(torch.load(modelckpt))
+model.to(device)
 
 #%%
 # load dataset
@@ -78,4 +77,5 @@ print(res)
 
 # Add scorer to calculate the CIDEr and other scores.
 scorer = Scorer.Scorers(caption_predictions, caption_references)
-scorer.compute_scores()
+res = scorer.compute_scores()
+print(res)
