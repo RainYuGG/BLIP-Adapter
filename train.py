@@ -37,12 +37,12 @@ split_dir = screen2words_dir + 'split/'
 num_epochs = 100
 patience = 30
 batch_size = 32
-learning_rate = 1e-3
+learning_rate = 1e-4
 weight_decay = 0.05
 # Initialize trackers, these are not parameters and should not be changed
 stale = 0
 best_bleu = 0.0
-_exp_name = "bleu_warmup_tfm_1e-3_e100"
+_exp_name = "bleu_warmup_tfm_e100"
 
 # %%
 model, vis_processors, _ = load_model_and_preprocess(name="blip_caption", model_type="base_coco", is_eval=False, device=device)
@@ -98,8 +98,8 @@ for epoch in range(num_epochs):
         # grad_norm = nn.utils.clip_grad_norm_(model.parameters(), max_norm=10.0)
         # Update the parameters with computed gradients.
         optimizer.step()
+        # Update the learning rate with scheduler
         scheduler.step()
-        
         # Record the loss and accuracy.
         train_loss.append(loss.item())
         
