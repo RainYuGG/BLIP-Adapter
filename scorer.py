@@ -52,7 +52,7 @@ class Scorers():
             if type(method) == list:
                 # for sc, scs, m in zip(score, scores, method):
                 #     print("%s: %0.3f"%(m, sc))
-                total_scores["Bleu"] = score
+                total_scores["bleu"] = score
             else:
                 # print("%s: %0.3f"%(method, score))
                 total_scores[method] = score
