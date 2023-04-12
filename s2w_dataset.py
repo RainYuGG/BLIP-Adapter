@@ -1,11 +1,11 @@
 # %%
 # Import necessary packages.
-import pandas as pd
 import os
 import random
 from torchvision.datasets import VisionDataset
 from typing import Any, Callable, Dict, List, Optional, Tuple
 from PIL import Image
+import polars as pl
 
 
 class Screeb2WordsDataset(VisionDataset):
@@ -50,13 +50,12 @@ class Screeb2WordsDataset(VisionDataset):
             split = [int(line.strip()) for line in open(split_dir + 'test_screens.txt', 'r')]
             self.transform = transform['eval']
         
-        self.data = pd.read_csv(caption_file)
+        self.data = pl.read_csv(caption_file)
         if self.caption_type == "random":
-            self.data = self.data[self.data['screenId'].isin(split)].groupby('screenId').agg(list).reset_index(drop=False)#.head(32)
+            self.data = self.data.filter(self.data["screenId"].is_in(split)).sort("screenId").groupby("screenId").agg(pl.col("*").alias("summary")).sort("screenId")
         elif self.caption_type == "full":
-            self.data = self.data[self.data['screenId'].isin(split)].reset_index(drop = True).head(50)
+            self.data = self.data.filter(self.data["screenId"].is_in(split)).sort("screenId")
 
-        self.caption_dict = self.data.groupby('screenId')['summary'].apply(list).to_dict
         #tokenizer
         self.text_processor = text_processor
         self.random_number = random.randint(0, 4)

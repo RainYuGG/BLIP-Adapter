@@ -33,7 +33,7 @@ screen2words_dir = '/data/screen2words/'
 caption_file = screen2words_dir + '/screen_summaries.csv'
 split_dir = screen2words_dir + 'split/'
 caption_type = "random" # type of cpation : random, full
-debug = True
+debug = False
 
 # set hyperparameters
 # parameter for training 
