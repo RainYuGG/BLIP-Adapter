@@ -20,9 +20,7 @@ class Screeb2WordsDataset(VisionDataset):
         split_dir: str,
         split_type: str = 'TEST', 
         transform: Optional[Callable] = None,
-        text_processor: Optional[Callable] = None,
-        caption_type: str = None,
-        debug: bool = False,
+        text_processor: Optional[Callable] = None
     ) -> None:
         """
         Args:
@@ -60,6 +58,7 @@ class Screeb2WordsDataset(VisionDataset):
 
         if debug:
             self.data = self.data.head(16)
+
         #tokenizer
         self.text_processor = text_processor
         
@@ -75,8 +74,12 @@ class Screeb2WordsDataset(VisionDataset):
         """
         img = Image.open(self.img_dir + str(self.data['screenId'][index]) + '.jpg').convert('RGB')
         caption = list(self.data['summary'][index])
+        
         if self.transform is not None:
             img = self.transform(img)
+        if self.text_processor is not None:
+            caption = self.text_processor(caption)  
+
         return {
             'image': img,
             'text_input': caption,

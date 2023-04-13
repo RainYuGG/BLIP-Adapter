@@ -35,6 +35,7 @@ split_dir = screen2words_dir + 'split/'
 caption_type = 'RANDOM' 
 debug = True
 
+
 # set hyperparameters
 # parameter for training 
 num_epochs = 50
@@ -64,10 +65,10 @@ vis_processors = tfm.tfm()
 
 #%%
 # load dataset
-train_dataset = Screeb2WordsDataset(img_dir, caption_file, split_dir, 'TRAIN', vis_processors, None, caption_type, debug)
-train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=2, collate_fn=train_dataset.collate_fn)
-valid_dataset = Screeb2WordsDataset(img_dir, caption_file, split_dir, 'VALID', vis_processors, None, caption_type, debug)
-valid_loader = DataLoader(valid_dataset, batch_size=batch_size, shuffle=False, num_workers=2, collate_fn=valid_dataset.collate_fn)
+train_dataset = Screeb2WordsDataset(img_dir, caption_file, split_dir, 'TRAIN', vis_processors, None)
+train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=2)
+valid_dataset = Screeb2WordsDataset(img_dir, caption_file, split_dir, 'VALID', vis_processors, None)
+valid_loader = DataLoader(valid_dataset, batch_size=batch_size, shuffle=False, num_workers=2)
 
 #%%
 # Gradient Accumulation
@@ -93,7 +94,7 @@ for epoch in range(num_epochs):
     for index, batch in enumerate(tqdm(train_loader)):
         batch['image'] = batch['image'].to(device)
         # print(batch['image_id'],batch['text_input'])
-        batch['text_input'] = batch['text_input']
+        batch['text_input'] = batch['text_input'][random.randint(0,4)]
 
         # Forward the data. (Make sure data and model are on the same device.)
         output = model(batch)
