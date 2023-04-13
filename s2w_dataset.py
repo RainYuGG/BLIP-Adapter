@@ -1,10 +1,10 @@
 # %%
 # Import necessary packages.
-import pandas as pd
 import os
 from torchvision.datasets import VisionDataset
 from typing import Any, Callable, Dict, List, Optional, Tuple
 from PIL import Image
+import polars as pl
 
 
 class Screeb2WordsDataset(VisionDataset):
@@ -44,8 +44,8 @@ class Screeb2WordsDataset(VisionDataset):
         elif split_type == 'TEST':
             split = [int(line.strip()) for line in open(split_dir + 'test_screens.txt', 'r')]
             self.transform = transform['eval']
-        self.data = pd.read_csv(caption_file)
-        self.data = self.data[self.data['screenId'].isin(split)].groupby('screenId').agg(list).reset_index(drop=False)#.head(32)
+        self.data = pl.read_csv(caption_file)
+        self.data = self.data.filter(self.data["screenId"].is_in(split)).sort("screenId").groupby("screenId").agg(pl.col("*").alias("summary")).sort("screenId")
         #tokenizer
         self.text_processor = text_processor
         
@@ -63,7 +63,7 @@ class Screeb2WordsDataset(VisionDataset):
         # if self.split_type == 'TRAIN':
         #     caption = self.data['summary'][index][random.randint(0, 4)]
         # else:
-        caption = self.data['summary'][index]
+        caption = list(self.data['summary'][index])
         if self.transform is not None:
             img = self.transform(img)
         if self.text_processor is not None:
