@@ -28,22 +28,25 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # set data path
 img_dir = '/data/rico/combined/'
-# img_dir = '/data/rico/convert/'
 screen2words_dir = '/data/screen2words/'
 caption_file = screen2words_dir + '/screen_summaries.csv'
 split_dir = screen2words_dir + 'split/'
+# type of cpation : 'RANDOM', 'FULL'
+caption_type = 'RANDOM' 
+debug = True
+
 
 # set hyperparameters
 # parameter for training 
 num_epochs = 50
 patience = 20
-batch_size = 16
+batch_size = 2
 learning_rate = 5e-5
 # weight_decay = 0.05
 # Initialize trackers, these are not parameters and should not be changed
 stale = 0
 best_score = 0.0
-_exp_name = "b+c_5e-5_GA_shuffle"
+_exp_name = "test"
 
 # %%
 model, _ , _ = load_model_and_preprocess(name="blip_caption", model_type="base_coco", is_eval=False, device=device)
@@ -131,7 +134,7 @@ for epoch in range(num_epochs):
     # Iterate the validation set by batches.
     for batch in tqdm(valid_loader):
         img_input = {"image": batch['image'].to(device)}
-        caption_references += scorer.transpose(batch['text_input'])
+        caption_references += batch['text_input']
         # Using torch.no_grad() accelerates the forward process.
         with torch.no_grad():
             caption_pred = model.generate(img_input)
