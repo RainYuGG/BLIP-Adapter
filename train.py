@@ -28,11 +28,11 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # set data path
 img_dir = '/data/rico/combined/'
-# img_dir = '/data/rico/convert/'
 screen2words_dir = '/data/screen2words/'
 caption_file = screen2words_dir + '/screen_summaries.csv'
 split_dir = screen2words_dir + 'split/'
-caption_type = "random" # type of cpation : random, full
+# type of cpation : 'RANDOM', 'FULL'
+caption_type = 'RANDOM' 
 debug = True
 
 # set hyperparameters
@@ -45,7 +45,7 @@ learning_rate = 5e-5
 # Initialize trackers, these are not parameters and should not be changed
 stale = 0
 best_score = 0.0
-_exp_name = "b+c_5e-5_GA_shuffle"
+_exp_name = "test"
 
 # %%
 model, _ , _ = load_model_and_preprocess(name="blip_caption", model_type="base_coco", is_eval=False, device=device)
@@ -83,8 +83,8 @@ num_warmup_steps = int(0.1 * num_training_steps)
 scheduler = get_cosine_schedule_with_warmup(optimizer, num_warmup_steps=num_warmup_steps, num_training_steps=num_training_steps)
 
 #%%
-# with open(f"./log/{_exp_name}_bs{bs}_log.txt","a") as f:
-#     f.write(f"bs = {bs}({batch_size}*{accumulation_steps})\n")
+with open(f"./log/{_exp_name}_bs{bs}_log.txt","a") as f:
+    f.write(f"bs = {bs}({batch_size}*{accumulation_steps})\n")
 
 for epoch in range(num_epochs):
     # ---------- Training ----------
