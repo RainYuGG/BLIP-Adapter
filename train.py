@@ -37,18 +37,18 @@ debug = False
 
 # set hyperparameters
 # parameter for training 
-num_epochs = 100
-patience = 10
-batch_size = 32
-learning_rate = 1e-4
-weight_decay = 0.05
+num_epochs = 50
+patience = 20
+batch_size = 16
+learning_rate = 5e-5
+# weight_decay = 0.05
 # Initialize trackers, these are not parameters and should not be changed
 stale = 0
 best_score = 0.0
-_exp_name = "bleu_warmup_GA_tfm_fullreshape"
+_exp_name = "b+c_5e-5_GA_shuffle"
 
 # %%
-model, vis_processors, _ = load_model_and_preprocess(name="blip_caption", model_type="base_coco", is_eval=False, device=device)
+model, _ , _ = load_model_and_preprocess(name="blip_caption", model_type="base_coco", is_eval=False, device=device)
 #modelckpt = '/home/chingyu/image-captioning-based-on-Screen2Words/ckpt/b32_e4-15_bleu.ckpt'
 #model.load_state_dict(torch.load(modelckpt))
 
@@ -60,28 +60,32 @@ model.to(device)
 # %%
 # training preprocessor
 import tfm
-vis_processors = tfm.tfm(image_size = 384)
+vis_processors = tfm.tfm()
 
 #%%
 # load dataset
 train_dataset = Screeb2WordsDataset(img_dir, caption_file, split_dir, 'TRAIN', vis_processors, None, caption_type, debug)
-train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False, num_workers=2, collate_fn=train_dataset.collate_fn)
+train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=2, collate_fn=train_dataset.collate_fn)
 valid_dataset = Screeb2WordsDataset(img_dir, caption_file, split_dir, 'VALID', vis_processors, None, caption_type, debug)
 valid_loader = DataLoader(valid_dataset, batch_size=batch_size, shuffle=False, num_workers=2, collate_fn=valid_dataset.collate_fn)
 
 #%%
+# Gradient Accumulation
+accumulation_steps = 32
+bs = batch_size * accumulation_steps
+
 # Define the loss function and optimizer
 # criterion = nn.CrossEntropyLoss()
 # optimizer = optim.Adam(params, lr=learning_rate)
 optimizer = torch.optim.AdamW(params=model.parameters(), lr=learning_rate) #, weight_decay=weight_decay)
-num_training_steps = len(train_loader) * num_epochs
+num_training_steps = len(train_loader) / accumulation_steps * num_epochs 
 num_warmup_steps = int(0.1 * num_training_steps)
 scheduler = get_cosine_schedule_with_warmup(optimizer, num_warmup_steps=num_warmup_steps, num_training_steps=num_training_steps)
 
 #%%
-# Gradient Accumulation
-accumulation_steps = 4
-bs = batch_size * accumulation_steps
+with open(f"./log/{_exp_name}_bs{bs}_log.txt","a") as f:
+    f.write(f"bs = {bs}({batch_size}*{accumulation_steps})\n")
+
 for epoch in range(num_epochs):
     # ---------- Training ----------
     model.train()
@@ -101,7 +105,7 @@ for epoch in range(num_epochs):
         loss.backward()
 
         # Gradient Accumulation
-        if (index + 1) % accumulation_steps == 0:
+        if (index + 1) % accumulation_steps == 0 or (index+1) == len(train_loader):
             # Clip the gradient norms for stable training.
             # grad_norm = nn.utils.clip_grad_norm_(model.parameters(), max_norm=10.0)
 
@@ -160,3 +164,4 @@ for epoch in range(num_epochs):
             break
 
 #%%
+    
