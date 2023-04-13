@@ -33,13 +33,13 @@ screen2words_dir = '/data/screen2words/'
 caption_file = screen2words_dir + '/screen_summaries.csv'
 split_dir = screen2words_dir + 'split/'
 caption_type = "random" # type of cpation : random, full
-debug = False
+debug = True
 
 # set hyperparameters
 # parameter for training 
 num_epochs = 50
 patience = 20
-batch_size = 16
+batch_size = 2
 learning_rate = 5e-5
 # weight_decay = 0.05
 # Initialize trackers, these are not parameters and should not be changed
@@ -83,8 +83,8 @@ num_warmup_steps = int(0.1 * num_training_steps)
 scheduler = get_cosine_schedule_with_warmup(optimizer, num_warmup_steps=num_warmup_steps, num_training_steps=num_training_steps)
 
 #%%
-with open(f"./log/{_exp_name}_bs{bs}_log.txt","a") as f:
-    f.write(f"bs = {bs}({batch_size}*{accumulation_steps})\n")
+# with open(f"./log/{_exp_name}_bs{bs}_log.txt","a") as f:
+#     f.write(f"bs = {bs}({batch_size}*{accumulation_steps})\n")
 
 for epoch in range(num_epochs):
     # ---------- Training ----------
@@ -133,7 +133,7 @@ for epoch in range(num_epochs):
     # Iterate the validation set by batches.
     for batch in tqdm(valid_loader):
         img_input = {"image": batch['image'].to(device)}
-        caption_references += scorer.transpose(batch['text_input'])
+        caption_references += batch['text_input']
         # Using torch.no_grad() accelerates the forward process.
         with torch.no_grad():
             caption_pred = model.generate(img_input)

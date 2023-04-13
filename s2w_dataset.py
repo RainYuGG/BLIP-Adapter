@@ -2,6 +2,7 @@
 # Import necessary packages.
 import os
 import random
+import torch
 from torchvision.datasets import VisionDataset
 from typing import Any, Callable, Dict, List, Optional, Tuple
 from PIL import Image
@@ -61,7 +62,7 @@ class Screeb2WordsDataset(VisionDataset):
         
     def __len__(self) -> int:
         if self.debug:
-            return 4
+            return 2
         return len(self.data)
     
     def __getitem__(self, index):
@@ -72,7 +73,7 @@ class Screeb2WordsDataset(VisionDataset):
             tuple: dict (image, caption, id).
         """
         img = Image.open(self.img_dir + str(self.data['screenId'][index]) + '.jpg').convert("RGB")
-        caption = self.data['summary'][index]
+        caption = list(self.data['summary'][index])
         if self.transform is not None:
             img = self.transform(img)
         return {
@@ -83,7 +84,7 @@ class Screeb2WordsDataset(VisionDataset):
 
     def collate_fn(self, samples):
         
-        image_batch = [x["image"] for x in samples]
+        image_batch = torch.stack([x["image"] for x in samples])
         caption_batch = [x["text_input"] for x in samples]
         id_batch = [x["image_id"] for x in samples]
 
