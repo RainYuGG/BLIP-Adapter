@@ -74,7 +74,9 @@ class Screeb2WordsDataset(VisionDataset):
             dict: {image, caption, id}
         """
         img = Image.open(self.img_dir + str(self.data['screenId'][index]) + '.jpg').convert('RGB')
-        caption = list(self.data['summary'][index])
+        caption = self.data['summary'][index]
+        if not(self.caption_type == 'FULL' and self.split_type == 'TRAIN'):
+            caption = list(caption)
         if self.transform is not None:
             img = self.transform(img)
         return {
