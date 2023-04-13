@@ -68,18 +68,19 @@ valid_dataset = Screeb2WordsDataset(img_dir, caption_file, split_dir, 'VALID', v
 valid_loader = DataLoader(valid_dataset, batch_size=batch_size, shuffle=False, num_workers=2)
 
 #%%
+# Gradient Accumulation
+accumulation_steps = 32
+bs = batch_size * accumulation_steps
+
 # Define the loss function and optimizer
 # criterion = nn.CrossEntropyLoss()
 # optimizer = optim.Adam(params, lr=learning_rate)
 optimizer = torch.optim.AdamW(params=model.parameters(), lr=learning_rate) #, weight_decay=weight_decay)
-num_training_steps = len(train_loader) * num_epochs
+num_training_steps = len(train_loader) / accumulation_steps * num_epochs 
 num_warmup_steps = int(0.1 * num_training_steps)
 scheduler = get_cosine_schedule_with_warmup(optimizer, num_warmup_steps=num_warmup_steps, num_training_steps=num_training_steps)
 
 #%%
-# Gradient Accumulation
-accumulation_steps = 32
-bs = batch_size * accumulation_steps
 with open(f"./log/{_exp_name}_bs{bs}_log.txt","a") as f:
     f.write(f"bs = {bs}({batch_size}*{accumulation_steps})\n")
 
@@ -161,3 +162,4 @@ for epoch in range(num_epochs):
             break
 
 #%%
+    
