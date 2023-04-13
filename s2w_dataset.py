@@ -51,14 +51,13 @@ class Screeb2WordsDataset(VisionDataset):
             self.transform = transform['eval']
         
         self.data = pl.read_csv(caption_file)
-        if self.caption_type == "random":
+        if self.caption_type == "random" or split_type == 'VALID' or split_type == 'TEST':
             self.data = self.data.filter(self.data["screenId"].is_in(split)).sort("screenId").groupby("screenId").agg(pl.col("*").alias("summary")).sort("screenId")
         elif self.caption_type == "full":
             self.data = self.data.filter(self.data["screenId"].is_in(split)).sort("screenId")
 
         #tokenizer
         self.text_processor = text_processor
-        self.random_number = random.randint(0, 4)
         
     def __len__(self) -> int:
         if self.debug:
@@ -99,7 +98,3 @@ class Screeb2WordsDataset(VisionDataset):
             "text_input" : caption_batch,
             "image_id" : id_batch,
         }
-
-    def update_caption(self):
-        if self.caption_type == "random":
-            self.random_number = random.randint(0, 4)
