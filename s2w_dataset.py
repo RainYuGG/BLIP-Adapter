@@ -16,8 +16,7 @@ class Screeb2WordsDataset(VisionDataset):
     def __init__(
         self, 
         img_dir: str, 
-        caption_file: str,
-        split_dir: str,
+        s2w_dir: str,
         split_type: str = 'TEST', 
         transform: Optional[Callable] = None,
         text_processor: Optional[Callable] = None,
@@ -26,8 +25,8 @@ class Screeb2WordsDataset(VisionDataset):
     ) -> None:
         """
         Args:
-        img_dir (string): img_dir directory where images are downloaded to.
-        caption_file (string): caption Path to caption file.
+        img_dir (string): directory where images are downloaded to.
+        s2w_dir (string): directory where Screen2words dataset is stored.
         transform (callable, optional): A function/transform that takes in a PIL image
             and returns a transformed version. E.g, ``transforms.PILToTensor``
         text_processor (callable, optional): A function/transform that add prompt in the beginnoing of the caption.
@@ -35,19 +34,20 @@ class Screeb2WordsDataset(VisionDataset):
         split_type: split type, one of 'TRAIN', 'VAL', or 'TEST'
         """
         super(VisionDataset).__init__()
+        # set data path
         self.img_dir = img_dir
-        self.caption_file = caption_file
-
+        caption_file = os.path.join(s2w_dir + 'screen_summaries.csv')
+        split_dir = os.path.join(s2w_dir + 'split')
         assert split_type in {'TRAIN', 'VALID', 'TEST'}
         self.split_type = split_type
         if split_type == 'TRAIN':
-            split = [int(line.strip()) for line in open(split_dir + 'train_screens.txt', 'r')]
+            split = [int(line.strip()) for line in open(os.path.join(split_dir, 'train_screens.txt'), 'r')]
             self.transform = transform['train']
         elif split_type == 'VALID':
-            split = [int(line.strip()) for line in open(split_dir + 'dev_screens.txt', 'r')]
+            split = [int(line.strip()) for line in open(os.path.join(split_dir, 'dev_screens.txt'), 'r')]
             self.transform = transform['eval']
         elif split_type == 'TEST':
-            split = [int(line.strip()) for line in open(split_dir + 'test_screens.txt', 'r')]
+            split = [int(line.strip()) for line in open(os.path.join(split_dir, 'test_screens.txt'), 'r')]
             self.transform = transform['eval']
 
         assert caption_type in {'RANDOM', 'FULL'}
@@ -73,7 +73,7 @@ class Screeb2WordsDataset(VisionDataset):
         Returns:
             dict: {image, caption, id}
         """
-        img = Image.open(self.img_dir + str(self.data['screenId'][index]) + '.jpg').convert('RGB')
+        img = Image.open(os.path.join(self.img_dir, str(self.data['screenId'][index]) + '.jpg')).convert('RGB')
         caption = self.data['summary'][index]
         if not(self.caption_type == 'FULL' and self.split_type == 'TRAIN'):
             caption = list(caption)
