@@ -64,8 +64,8 @@ def main(args):
     scheduler = get_cosine_schedule_with_warmup(optimizer, num_warmup_steps=num_warmup_steps, num_training_steps=num_training_steps)
 
     #%%
-    with open(f"./log/{args.exp_name}_bs{bs}_log.txt","a") as f:
-        f.write(f"bs = {bs}({args.batch_size}*{args.accumulation_steps}), num_epoch = {args.num_epochs}\n, lr = {args.lr}, patience = {args.patience}")
+    with open(f"./log/{args.exp_name}_bs{bs}_{args.caption_type}_log.txt","a") as f:
+        f.write(f"bs = {bs}({args.batch_size}*{args.accumulation_steps}), num_epoch = {args.num_epochs}\n, lr = {args.lr}, patience = {args.patience}\n")
 
     for epoch in range(args.num_epochs):
         # ---------- Training ----------
@@ -127,15 +127,15 @@ def main(args):
         # update logs
         valid_score = total_score['bleu'][3] + total_score['CIDEr']
         if valid_score > best_score:
-            with open(f"./log/{args.exp_name}_bs{bs}_log.txt","a") as f:
+            with open(f"./log/{args.exp_name}_bs{bs}_{args.caption_type}_log.txt","a") as f:
                 f.write(f"[ Valid | {epoch + 1:03d}/{args.num_epochs:03d} ] bleu = {total_score['bleu'][3]:.5f}, CIDEr = {total_score['CIDEr']:.5f}, RougeL = {total_score['ROUGE_L']:.5f} -> best\n")
         else:
-            with open(f"./log/{args.exp_name}_bs{bs}_log.txt","a") as f:
+            with open(f"./log/{args.exp_name}_bs{bs}_{args.caption_type}_log.txt","a") as f:
                 f.write(f"[ Valid | {epoch + 1:03d}/{args.num_epochs:03d} ] bleu = {total_score['bleu'][3]:.5f}, CIDEr = {total_score['CIDEr']:.5f}, RougeL = {total_score['ROUGE_L']:.5f}\n")
         # save models
         if valid_score > best_score:
             print(f"Best model found at epoch {epoch}, saving model")
-            torch.save(model.state_dict(), f"{args.exp_name}_bs{bs}.ckpt") # only save best to prevent output memory exceed error
+            torch.save(model.state_dict(), f"{args.exp_name}_bs{bs}_{args.caption_type}.ckpt") # only save best to prevent output memory exceed error
             best_score = valid_score
             stale = 0
         else:
@@ -151,24 +151,24 @@ if __name__ == '__main__':
                         help='debug mode for testing code')
     parser.add_argument('--lr', type=float, default=5e-5,
                         help='learning rate during training')
-    parser.add_argument('--num-epochs', type=int, default=10,
+    parser.add_argument('-e', '--num-epochs', type=int, default=10,
                         help='number of training epochs')
-    parser.add_argument('--batch-size', type=int, default=32,
+    parser.add_argument('-b', '--batch-size', type=int, default=32,
                         help='batch size during training')
-    parser.add_argument('--accumulation-steps', type=int, default=1,
+    parser.add_argument('-a', '--accumulation-steps', type=int, default=1,
                         help='gradient accumulation step')
-    parser.add_argument('--patience', type=int, default=15,
+    parser.add_argument('-p', '--patience', type=int, default=15,
                         help='')
     parser.add_argument('--img-dir', type=str, default='/data/rico/combined/',
                         help='image directory where Rico dataset is stored')
     parser.add_argument('--s2w-dir', type=str, default='/data/screen2words/',
                         help='directory where Screen2words dataset is stored')
-    parser.add_argument('--caption-type', type=str, default='RANDOM',
+    parser.add_argument('-c', '--caption-type', type=str, default='RANDOM',
                         help='type of select caption in training data.\n \
                             set "RANDOM" to select random one caption for each image in traning.\n \
                             set "FULL" to select all five caption and duplicate image five times for five cases.'
                         )
-    parser.add_argument('--exp-name',type=str, default='test',
+    parser.add_argument('-name', '--exp-name',type=str, default='test',
                         help='experiment name')
     parser.add_argument('--seed', type=int, default=1126,
                         help='set random seed')
