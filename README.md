@@ -59,8 +59,7 @@ pip install gensim
 sudo cp jdk-xxxxx_linux-x64_bin.tar.gz /opt
 cd /opt
 sudo mkdir java
-sudo chown [user_name] java
-sudo chgrp [user_name] java
+sudo chown ${USER}:${USER} java
 sudo tar -zxvf jdk-xxxxx_linux-x64_bin.tar.gz -C /opt/java
 ```
 3. Set the environment variable in `~/.bashrc` by adding the following lines:
@@ -89,7 +88,7 @@ bash get_google_word2vec_model.sh
 ### 4. Demo
 To run the demo, execute the following command:
 ```bash
-python Scorer.py
+python scorer.py
 ```
 Make sure to run the demo after the installation to confirm that everything works as expected.
 
