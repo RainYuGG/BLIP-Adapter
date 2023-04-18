@@ -20,7 +20,7 @@ class Screeb2WordsDataset(VisionDataset):
         split_type: str = 'TEST', 
         transform: Optional[Callable] = None,
         text_processor: Optional[Callable] = None,
-        caption_type: str = None,
+        caption_type: str = 'EVAL',
         debug: bool = False,
     ) -> None:
         """
@@ -50,7 +50,7 @@ class Screeb2WordsDataset(VisionDataset):
             split = [int(line.strip()) for line in open(os.path.join(split_dir, 'test_screens.txt'), 'r')]
             self.transform = transform['eval']
 
-        assert caption_type in {'RANDOM', 'FULL'}
+        assert caption_type in {'RANDOM', 'FULL', 'EVAL'}
         self.caption_type = caption_type
         self.data = pl.read_csv(caption_file)
         if self.caption_type == 'FULL' and self.split_type == 'TRAIN':

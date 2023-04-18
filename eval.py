@@ -19,7 +19,7 @@ from tqdm.auto import tqdm
 from s2w_dataset import Screeb2WordsDataset
 import scorer
 
-def main(args):
+def evaluation(args):
 
     #%%
     torch.backends.cudnn.deterministic = True
@@ -57,19 +57,19 @@ def main(args):
     print('pred len:', len(caption_predictions))
     # print('id:', batch['image_id'])
     #%%    
-    res = scorer.calculate_score(caption_predictions, caption_references, 'bleu')
-    print('bleu:', res)
+    bleu = scorer.calculate_score(caption_predictions, caption_references, 'bleu')
+    print(f'bleu:{bleu:.5f}')
 
-    res = scorer.calculate_score(caption_predictions, caption_references, 'rouge')
-    print('rouge:', res)
+    rougeL = scorer.calculate_score(caption_predictions, caption_references, 'rouge')
+    print(f'rougeL:{rougeL:.5f}')
 
-    res = scorer.calculate_score(caption_predictions, caption_references, 'meteor')
-    print('mentor:', res)
+    mentor = scorer.calculate_score(caption_predictions, caption_references, 'meteor')
+    print(f'mentor:{mentor:.5f}')
 
     # Add scorer to calculate the CIDEr and other scores.
     cocoeval = scorer.Scorers(caption_predictions, caption_references)
-    res = cocoeval.compute_scores()
-    print(res)
+    total_score = cocoeval.compute_scores()
+    print(f"bleu = {total_score['bleu'][3]:.5f}, CIDEr = {total_score['CIDEr']:.5f}, RougeL = {total_score['ROUGE_L']:.5f}")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -81,7 +81,7 @@ if __name__ == '__main__':
                         help='image directory where Rico dataset is stored')
     parser.add_argument('--s2w-dir', type=str, default='/data/screen2words/',
                         help='directory where Screen2words dataset is stored')
-    parser.add_argument('--caption-type', type=str, default='',
+    parser.add_argument('--caption-type', type=str, default='EVAL',
                         help='type of select caption in training data.\n \
                             set "RANDOM" to select random one caption for each image in traning.\n \
                             set "FULL" to select all five caption and duplicate image five times for five cases.'
@@ -89,4 +89,4 @@ if __name__ == '__main__':
     parser.add_argument('--ckpt', type=str, default='./ckpt/b32_e4-15_bleu.ckpt',
                         help='path to model checkpoint')
     args = parser.parse_args()
-    main(args) 
+    evaluation(args) 

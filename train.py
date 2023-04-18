@@ -14,7 +14,7 @@ from s2w_dataset import Screeb2WordsDataset
 import scorer
 
 #%%
-def main(args):
+def train(args):
     # set random args.seed
     random.seed(args.seed)
     np.random.seed(args.seed)
@@ -48,7 +48,7 @@ def main(args):
     # load dataset
     train_dataset = Screeb2WordsDataset(args.img_dir, args.s2w_dir, 'TRAIN', vis_processors, None, args.caption_type, args.debug)
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=2, collate_fn=train_dataset.collate_fn)
-    valid_dataset = Screeb2WordsDataset(args.img_dir, args.s2w_dir, 'VALID', vis_processors, None, args.caption_type, args.debug)
+    valid_dataset = Screeb2WordsDataset(args.img_dir, args.s2w_dir, 'VALID', vis_processors, None, 'EVAL', args.debug)
     valid_loader = DataLoader(valid_dataset, batch_size=args.batch_size, shuffle=False, num_workers=2, collate_fn=valid_dataset.collate_fn)
 
     #%%
@@ -173,4 +173,4 @@ if __name__ == '__main__':
     parser.add_argument('--seed', type=int, default=1126,
                         help='set random seed')
     args = parser.parse_args()
-    main(args) 
+    train(args) 
