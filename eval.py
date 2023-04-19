@@ -52,9 +52,10 @@ def evaluation(args):
         if args.debug:
             break
     #%%
-    print('ref len:', len(caption_references))
-    print('ref[0] len:', len(caption_references[0]))
-    print('pred len:', len(caption_predictions))
+    if args.debug:
+        print('ref len:', len(caption_references))
+        print('ref[0] len:', len(caption_references[0]))
+        print('pred len:', len(caption_predictions))
     # print('id:', batch['image_id'])
     #%%    
     bleu = scorer.calculate_score(caption_predictions, caption_references, 'bleu')
@@ -69,7 +70,7 @@ def evaluation(args):
     # Add scorer to calculate the CIDEr and other scores.
     cocoeval = scorer.Scorers(caption_predictions, caption_references)
     total_score = cocoeval.compute_scores()
-    print(f"bleu = {total_score['bleu'][3]:.5f}, CIDEr = {total_score['CIDEr']:.5f}, RougeL = {total_score['ROUGE_L']:.5f}")
+    print(f"bleu = {total_score['bleu'][3]:.5f}, CIDEr = {total_score['CIDEr']:.5f}, RougeL = {total_score['ROUGE_L']:.5f}\n")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
