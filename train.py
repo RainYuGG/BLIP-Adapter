@@ -31,12 +31,11 @@ def train(args):
 
     # %%
     model, _ , _ = load_model_and_preprocess(name="blip_caption", model_type="base_coco", is_eval=False, device=device)
-    #modelckpt = '/home/chingyu/image-captioning-based-on-Screen2Words/ckpt/b32_e4-15_bleu.ckpt'
-    #model.load_state_dict(torch.load(modelckpt))
 
-    # # change input size from 384*384 to 224*224
-    # model.visual_encoder.patch_embed.proj = nn.Conv2d(3, 768, kernel_size=(9, 9), stride=(9, 9))
-    # model.visual_encoder.patch_embed.img_size = (224, 224)
+    if args.checkpoint_path:
+        model.load_state_dict(torch.load(args.checkpoint_path))
+        print(f"Load checkpoint from {args.checkpoint_path}")
+    
     model.to(device)
 
     # %%
@@ -168,6 +167,8 @@ if __name__ == '__main__':
                             set "RANDOM" to select random one caption for each image in traning.\n \
                             set "FULL" to select all five caption and duplicate image five times for five cases.'
                         )
+    parser.add_argument('-ckpt', '--checkpoint-path', type=str, default=None,
+                        help='path to model checkpoint')
     parser.add_argument('-name', '--exp-name',type=str, default='test',
                         help='experiment name')
     parser.add_argument('--seed', type=int, default=1126,
