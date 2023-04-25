@@ -1,12 +1,6 @@
 #%%
-import os
-import sys
 import torch
-import torch.nn as nn
-import torch.optim as optim
-import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
-from transformers import DistilBertTokenizer, AutoTokenizer
 from lavis.models import load_model_and_preprocess
 import argparse
 # This is for the progress bar.

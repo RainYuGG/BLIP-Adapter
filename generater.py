@@ -1,10 +1,11 @@
 #%%
 import os
+import argparse
 import torch
 from lavis.models import load_model_and_preprocess
 from PIL import Image
+# own processing implementation
 import tfm
-import argparse
 
 def generate_caption(args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

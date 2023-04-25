@@ -9,7 +9,7 @@ import random
 import argparse
 # This is for the progress bar.
 from tqdm.auto import tqdm
-# own dataset & scorer utils implement
+# own dataset & scorer utils implementation
 from s2w_dataset import Screeb2WordsDataset
 import scorer
 
