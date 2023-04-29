@@ -15,12 +15,14 @@ model, vis_processors, text_processors = load_model_and_preprocess(name="blip_ca
 image = vis_processors["train"](raw_image).unsqueeze(0).to(device)
 #%%
 print(text_processors["train"])
-raw_text = "a screenshot of\n"
+raw_text = ["a screenshot of", "a page of", "page displaying", "a page showing", "a page with", "a screenshot of a page of", "a screenshot of a page showing", "a screenshot of a page with", "a screenshot of a page displaying", "a screens"]
 print(raw_text)
 print(repr(raw_text))
-text_input = text_processors["train"](raw_text)
+text_input = raw_text
+# text_input = text_processors["train"](raw_text)
 print(repr(text_input))
 #%%
+model.train()
 samples = {"image": image, "text_input": text_input}
 output = model(samples)
 print(output.keys())
