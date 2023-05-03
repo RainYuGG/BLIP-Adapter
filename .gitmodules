@@ -1,3 +1,6 @@
 [submodule "coco_caption"]
 	path = coco_caption
 	url = https://github.com/ruotianluo/coco-caption.git
+[submodule "FinetuneClipOnRico"]
+	path = FinetuneClipOnRico
+	url = https://github.com/ihuachang/FinetuneClipOnRico.git
