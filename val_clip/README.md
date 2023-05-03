@@ -34,3 +34,6 @@ python pred.py --batch-size 1024 --top-k 5 --dataset-dir "/path/to/dataset" --cs
 
 The program will print the precision of the model after processing each batch of images.
 
+## Dataset
+1. [Enrico](https://github.com/luileito/enrico.git)
+2. [Rico](https://interactionmining.org/rico)
