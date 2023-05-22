@@ -1,2 +1,2 @@
 from .models import register, make
-from . import sam
+from .blip import blip

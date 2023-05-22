@@ -1,0 +1,14 @@
+ # Copyright (c) 2022, salesforce.com, inc.
+ # All rights reserved.
+ # SPDX-License-Identifier: BSD-3-Clause
+ # For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/BSD-3-Clause
+
+model:
+  name: blip_caption
+  args:
+    prompt: None
+    max_txt_len: 20
+    # vit encoder
+    vit_type: "base"
+    # bert config
+    med_config_path: "configs/med_config.json"
