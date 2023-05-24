@@ -34,12 +34,6 @@ class BlipCaption(BlipBase):
         # text encoder + multimodal decoder
         self.text_decoder = XBertLMHeadDecoder.from_config(med_config_path, False)
 
-        # self.prompt_generator = PromptGenerator(self.scale_factor, self.prompt_type, self.embed_dim,
-        #                                         self.tuning_stage, self.depth,
-        #                                         self.input_type, self.freq_nums,
-        #                                         self.handcrafted_tune, self.embedding_tune, self.adaptor,
-        #                                         img_size, patch_size)
-
         self.prompt = prompt
         self.prompt_length = len(self.tokenizer(self.prompt).input_ids) - 1
 
@@ -198,6 +192,7 @@ class BlipCaption(BlipBase):
 
         return captions
 
+    @classmethod
     def from_config(cls, cfg):
         # vision encoder
         image_encoder = VisionTransformerEncoder.from_config(cfg)
@@ -211,4 +206,17 @@ class BlipCaption(BlipBase):
         model.load_checkpoint_from_config(cfg)
 
         return model
+    
+    def set_requires_grad(self, nets, requires_grad=False):
+        """Set requies_grad=Fasle for all the networks to avoid unnecessary computations
+        Parameters:
+            nets (network list)   -- a list of networks
+            requires_grad (bool)  -- whether the networks require gradients or not
+        """
+        if not isinstance(nets, list):
+            nets = [nets]
+        for net in nets:
+            if net is not None:
+                for param in net.parameters():
+                    param.requires_grad = requires_grad
     

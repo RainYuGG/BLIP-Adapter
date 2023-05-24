@@ -1,4 +1,5 @@
 import os
+import torch
 from lavis.models.med import BertLMHeadModel
 from transformers.models.bert.configuration_bert import BertConfig
 

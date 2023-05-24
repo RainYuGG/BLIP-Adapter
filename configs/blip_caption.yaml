@@ -6,9 +6,10 @@
 model:
   name: blip_caption
   args:
-    prompt: None
     max_txt_len: 20
     # vit encoder
     vit_type: "base"
     # bert config
     med_config_path: "configs/med_config.json"
+    # generation configs
+    prompt: "a picture of "
