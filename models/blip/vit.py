@@ -447,7 +447,8 @@ def interpolate_pos_embed(pos_embed_checkpoint, visual_encoder):
 
 
 class VisionTransformerEncoder(VisionTransformer, BaseEncoder):
-    def __init__(cls, vit_type, from_pretrained=False):
+    @classmethod
+    def from_config(cls, vit_type='base', from_pretrained=False):
         image_size = 384
         ckpt_layer = 0
         drop_path_rate = 0

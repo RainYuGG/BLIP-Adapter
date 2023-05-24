@@ -15,7 +15,7 @@ from .vit import VisionTransformerEncoder
 # from omegaconf import OmegaConf
 
 @register('blip_caption')
-class BlipCaptionS2W(BlipBase):
+class BlipCaption(BlipBase):
     """
     BLIP captioning model for Screen2words.
 
@@ -30,7 +30,7 @@ class BlipCaptionS2W(BlipBase):
         super().__init__()
         self.tokenizer = self.init_tokenizer()    
         # vision encoder
-        self.visual_encoder = VisionTransformerEncoder(vit_type, False)
+        self.visual_encoder = VisionTransformerEncoder.from_config(vit_type = vit_type)
         # text encoder + multimodal decoder
         self.text_decoder = XBertLMHeadDecoder.from_config(med_config_path, False)
 
