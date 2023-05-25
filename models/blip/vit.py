@@ -1,3 +1,8 @@
+"""
+Based on Lavis code base
+https://github.com/salesforce/LAVIS/blob/main/lavis/models/vit.py
+"""
+
 import math
 import torch
 import torch.nn as nn

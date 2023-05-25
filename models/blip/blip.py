@@ -1,3 +1,7 @@
+"""
+Based on Lavis code base
+https://github.com/salesforce/LAVIS/blob/main/lavis/models/blip_models/blip_caption.py
+"""
 import logging
 import torch
 import torch.nn as nn
