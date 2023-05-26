@@ -18,6 +18,7 @@ from timm.models.helpers import named_apply, adapt_input_conv
 from fairscale.nn.checkpoint.checkpoint_activations import checkpoint_wrapper
 from lavis.models.base_model import BaseEncoder
 
+from models.prompt import PromptGenerator
 
 class Mlp(nn.Module):
     """MLP as used in Vision Transformer, MLP-Mixer and related networks"""
@@ -241,6 +242,15 @@ class VisionTransformer(nn.Module):
         )
         self.norm = norm_layer(embed_dim)
 
+        # Prompt Layers
+        self.prompt_generator = PromptGenerator(
+            img_size=img_size, 
+            patch_size=patch_size,
+            in_chans=in_chans,
+            embed_dim=embed_dim,
+            depth=depth,
+        )
+
         trunc_normal_(self.pos_embed, std=0.02)
         trunc_normal_(self.cls_token, std=0.02)
         self.apply(self._init_weights)
@@ -259,8 +269,13 @@ class VisionTransformer(nn.Module):
         return {"pos_embed", "cls_token"}
 
     def forward(self, x, register_blk=-1):
+        # Prompt embedding
+        prompt_embed = self.prompt_generator.patch_embed(x)
+        
         B = x.shape[0]
         x = self.patch_embed(x)
+                
+        print(x.shape)
 
         cls_tokens = self.cls_token.expand(
             B, -1, -1
@@ -270,7 +285,17 @@ class VisionTransformer(nn.Module):
         x = x + self.pos_embed[:, : x.size(1), :]
         x = self.pos_drop(x)
 
+        # Prompt Layers insert
+        prompt_embed = torch.cat((cls_tokens, prompt_embed), dim=1)
+        prompt_embed = prompt_embed + self.pos_embed[:, : prompt_embed.size(1), :]
+        prompt_embed = self.pos_drop(prompt_embed)
+        prompt_embed = self.prompt_generator.embed_helper(prompt_embed)
+        prompts = self.prompt_generator.get_prompt(prompt_embed)
+
         for i, blk in enumerate(self.blocks):
+            # assert with error message to find where the error is
+            assert x.shape == prompts[i].shape, "prompt shape {} should be the same as x shape {}".format(prompts[i].shape, x.shape)
+            x = prompts[i] + x
             x = blk(x, register_blk == i)
         x = self.norm(x)
 

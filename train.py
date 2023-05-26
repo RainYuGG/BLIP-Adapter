@@ -30,7 +30,7 @@ def train(args):
     stale = 0
     best_score = 0.0
 
-    # %%
+    # load model
     model = load_model(args.model)
     for name, param in model.named_parameters():
         if "prompt" not in name:
@@ -38,26 +38,23 @@ def train(args):
         else:
             print(name)
 
-
+    # load checkpoint
     if args.checkpoint_path:
         model.load_state_dict(torch.load(args.checkpoint_path))
         print(f"Load checkpoint from {args.checkpoint_path}")
     
     model.to(device)
 
-    # %%
     # training preprocessor
     import tfm
     vis_processors = tfm.tfm()
 
-    #%%
     # load dataset
     train_dataset = Screeb2WordsDataset(args.img_dir, args.s2w_dir, 'TRAIN', vis_processors, None, args.caption_type, args.debug)
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=2, collate_fn=train_dataset.collate_fn)
     valid_dataset = Screeb2WordsDataset(args.img_dir, args.s2w_dir, 'VALID', vis_processors, None, 'EVAL', args.debug)
     valid_loader = DataLoader(valid_dataset, batch_size=args.batch_size, shuffle=False, num_workers=2, collate_fn=valid_dataset.collate_fn)
 
-    #%%
     # Gradient Accumulation
     bs = args.batch_size * args.accumulation_steps
 
