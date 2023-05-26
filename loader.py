@@ -1,26 +1,33 @@
 #%%
+import os
 import requests
 import yaml
 import torch
+from typing import Optional, Dict, Any
 from PIL import Image
-
-import tfm
 import models
+
+
+def load_model(model_name: str):
+    with open(os.path.join('configs/', model_name + '.yaml'), 'r') as f:
+        config = yaml.load(f, Loader=yaml.FullLoader)
+    model = models.make(config['model']).cuda()
+    if(model_name == 'blip_caption'):
+        model.load_checkpoint(config['model']['checkpoint_url'])
+    return model
 
 
 if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
     img_url = 'https://storage.googleapis.com/sfr-vision-language-research/BLIP/demo.jpg' 
     # raw_image = Image.open(requests.get(img_url, stream=True).raw).convert('RGB')
     raw_image = Image.open("/data/rico/combined/9611.jpg").convert("RGB")
+
+    import tfm
     vis_processors = tfm.tfm()
     image = vis_processors["eval"](raw_image).unsqueeze(0).to(device)
 
-    with open('configs/blip_caption.yaml', 'r') as f:
-        config = yaml.load(f, Loader=yaml.FullLoader)
-    model = models.make(config['model']).cuda()
-    model.load_checkpoint("https://storage.googleapis.com/sfr-vision-language-research/LAVIS/models/BLIP/blip_coco_caption_base.pth")
+    model = load_model('blip_caption')
 
     # Print the model architecture
     # print(model)

@@ -12,6 +12,7 @@ from tqdm.auto import tqdm
 # own dataset & scorer utils implementation
 from s2w_dataset import Screeb2WordsDataset
 import scorer
+from loader import load_model
 
 #%%
 def train(args):
@@ -30,7 +31,13 @@ def train(args):
     best_score = 0.0
 
     # %%
-    model, _ , _ = load_model_and_preprocess(name="blip_caption", model_type="base_coco", is_eval=False, device=device)
+    model = load_model(args.model)
+    for name, param in model.named_parameters():
+        if "prompt" not in name:
+            param.requires_grad_(False)
+        else:
+            print(name)
+
 
     if args.checkpoint_path:
         model.load_state_dict(torch.load(args.checkpoint_path))
@@ -169,6 +176,8 @@ if __name__ == '__main__':
                         )
     parser.add_argument('-ckpt', '--checkpoint-path', type=str, default=None,
                         help='path to model checkpoint')
+    parser.add_argument('-m', '--model', type=str, default='blip_caption',
+                        help='model name')
     parser.add_argument('-name', '--exp-name',type=str, default='test',
                         help='experiment name')
     parser.add_argument('--seed', type=int, default=1126,

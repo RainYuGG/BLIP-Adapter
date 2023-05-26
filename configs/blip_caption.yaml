@@ -13,3 +13,4 @@ model:
     med_config_path: "configs/med_config.json"
     # generation configs
     prompt: "a picture of "
+  checkpoint_url: "https://storage.googleapis.com/sfr-vision-language-research/LAVIS/models/BLIP/blip_coco_caption_base.pth"
