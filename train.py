@@ -33,7 +33,7 @@ def train(args):
     # load model
     model = load_model(args.model)
     for name, param in model.named_parameters():
-        if "prompt" not in name:
+        if "prompt" not in name: # and "text" not in name:
             param.requires_grad_(False)
         else:
             print(name)
@@ -166,7 +166,7 @@ if __name__ == '__main__':
                         help='image directory where Rico dataset is stored')
     parser.add_argument('--s2w-dir', type=str, default='/data/screen2words/',
                         help='directory where Screen2words dataset is stored')
-    parser.add_argument('-c', '--caption-type', type=str, default='RANDOM',
+    parser.add_argument('-c', '--caption-type', type=str, default='FULL',
                         help='type of select caption in training data.\n \
                             set "RANDOM" to select random one caption for each image in traning.\n \
                             set "FULL" to select all five caption and duplicate image five times for five cases.'

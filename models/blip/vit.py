@@ -270,12 +270,10 @@ class VisionTransformer(nn.Module):
 
     def forward(self, x, register_blk=-1):
         # Prompt embedding
-        prompt_embed = self.prompt_generator.patch_embed(x)
+        prompt_embed = self.prompt_generator.init_handcrafted(x)
         
         B = x.shape[0]
         x = self.patch_embed(x)
-                
-        print(x.shape)
 
         cls_tokens = self.cls_token.expand(
             B, -1, -1

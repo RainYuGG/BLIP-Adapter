@@ -8,7 +8,7 @@ from typing import Optional, Tuple, Type, Union
 
 from timm.models.vision_transformer import PatchEmbed
 from timm.models.layers import trunc_normal_
-
+import torchvision.transforms as transforms
 
 
 class PromptGenerator(nn.Module):
@@ -70,6 +70,15 @@ class PromptGenerator(nn.Module):
             prompt = lightweight_mlp(embedding_feature)
             prompts.append(self.shared_mlp(prompt))
         return prompts
+
+    def rgb2gray(self, x):
+        x = transforms.Grayscale(num_output_channels=3)(x)
+        return x
+    
+    def init_handcrafted(self, x):
+        x = self.rgb2gray(x)
+        x = self.patch_embed(x)
+        return x
 
     # def forward(self, x: torch.Tensor) -> torch.Tensor:
     #     return x
