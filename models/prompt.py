@@ -34,8 +34,10 @@ class PromptGenerator(nn.Module):
             in_chans=in_chans,
             embed_dim=embed_dim,
         )
-        self.embed_helper = nn.Linear(embed_dim, embed_dim//scale_factor)
         
+        self.handcrafted_embed_helper = nn.Linear(self.embed_dim, self.embed_dim//self.scale_factor)
+        self.embedding_generator = nn.Linear(self.embed_dim, self.embed_dim//self.scale_factor)
+
         for i in range(self.depth):
             lightweight_mlp = nn.Sequential(
                 nn.Linear(self.embed_dim//self.scale_factor, self.embed_dim//self.scale_factor),
@@ -62,12 +64,12 @@ class PromptGenerator(nn.Module):
             if m.bias is not None:
                 m.bias.data.zero_()
 
-    def get_prompt(self, embedding_feature):
+    def get_prompt(self, handcrafted_feature, embedding_feature):
         prompts = []
         for i in range(self.depth):
             lightweight_mlp = getattr(self, 'lightweight_mlp_{}'.format(str(i)))
             # prompt = proj_prompt(prompt)
-            prompt = lightweight_mlp(embedding_feature)
+            prompt = lightweight_mlp(handcrafted_feature + embedding_feature)
             prompts.append(self.shared_mlp(prompt))
         return prompts
 
@@ -75,10 +77,12 @@ class PromptGenerator(nn.Module):
         x = transforms.Grayscale(num_output_channels=3)(x)
         return x
     
+    def init_embeddings(self, x):
+        return self.embedding_generator(x)
+    
     def init_handcrafted(self, x):
         x = self.rgb2gray(x)
-        x = self.patch_embed(x)
-        return x
+        return self.patch_embed(x)
 
     # def forward(self, x: torch.Tensor) -> torch.Tensor:
     #     return x

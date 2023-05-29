@@ -269,8 +269,8 @@ class VisionTransformer(nn.Module):
         return {"pos_embed", "cls_token"}
 
     def forward(self, x, register_blk=-1):
-        # Prompt embedding
-        prompt_embed = self.prompt_generator.init_handcrafted(x)
+        # Prompt embedding with grayscale
+        handcrafted_feature = self.prompt_generator.init_handcrafted(x)
         
         B = x.shape[0]
         x = self.patch_embed(x)
@@ -283,12 +283,16 @@ class VisionTransformer(nn.Module):
         x = x + self.pos_embed[:, : x.size(1), :]
         x = self.pos_drop(x)
 
-        # Prompt Layers insert
-        prompt_embed = torch.cat((cls_tokens, prompt_embed), dim=1)
-        prompt_embed = prompt_embed + self.pos_embed[:, : prompt_embed.size(1), :]
-        prompt_embed = self.pos_drop(prompt_embed)
-        prompt_embed = self.prompt_generator.embed_helper(prompt_embed)
-        prompts = self.prompt_generator.get_prompt(prompt_embed)
+        # use the same cls_tokens impl to fit the original x shape
+        handcrafted_feature = torch.cat((cls_tokens, handcrafted_feature), dim=1)
+        handcrafted_feature = handcrafted_feature + self.pos_embed[:, : handcrafted_feature.size(1), :]
+        handcrafted_feature = self.pos_drop(handcrafted_feature)
+        handcrafted_feature = self.prompt_generator.handcrafted_embed_helper(handcrafted_feature)
+
+        # get original embedding feature, and downsample the features to get prompt embedding feature
+        embedding_feature = self.prompt_generator.init_embeddings(x)
+
+        prompts = self.prompt_generator.get_prompt(handcrafted_feature, embedding_feature)
 
         for i, blk in enumerate(self.blocks):
             # assert with error message to find where the error is

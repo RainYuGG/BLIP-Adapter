@@ -33,7 +33,7 @@ def train(args):
     # load model
     model = load_model(args.model)
     for name, param in model.named_parameters():
-        if "prompt" not in name: # and "text" not in name:
+        if "prompt" not in name and "text" not in name:
             param.requires_grad_(False)
         else:
             print(name)
