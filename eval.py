@@ -12,21 +12,26 @@ from tqdm.auto import tqdm
 # own dataset implement
 from s2w_dataset import Screeb2WordsDataset
 import scorer
+import tfm
+from loader import load_model
 
 def evaluation(args):
-
-    #%%
+    # Set deterministic options for reproducible results.
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
     # "cuda" only when GPUs are available.
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    #%% 
-    # initialize model & tokenizer define
-    model, vis_processors, _ = load_model_and_preprocess(name="blip_caption", model_type="base_coco", is_eval=True, device=device)
-    model.load_state_dict(torch.load(args.ckpt))
-    model.to(device)
 
-    #%%
+    # initialize model & tokenizer define
+    model = load_model(args.model)
+    # load checkpoint
+    if args.checkpoint_path is not None:
+        model.load_state_dict(torch.load(args.checkpoint_path))
+        print(f"Load checkpoint from {args.checkpoint_path}")
+
+    # training preprocessor
+    import tfm
+    vis_processors = tfm.tfm()
     # load dataset
     test_dataset = Screeb2WordsDataset(args.img_dir, args.s2w_dir, 'TEST', vis_processors, None, args.caption_type, args.debug)
     test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False, num_workers=2, collate_fn=test_dataset.collate_fn)
@@ -70,18 +75,20 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--debug', type=bool, default=0,
                         help='debug mode for testing code')
-    parser.add_argument('--batch-size', type=int, default=128,
+    parser.add_argument('-m', '--model', type=str, default='blip_caption',
+                        help='model name')
+    parser.add_argument('-b', '--batch-size', type=int, default=128,
                         help='batch size during training')
     parser.add_argument('--img-dir', type=str, default='/data/rico/combined/',
                         help='image directory where Rico dataset is stored')
     parser.add_argument('--s2w-dir', type=str, default='/data/screen2words/',
                         help='directory where Screen2words dataset is stored')
-    parser.add_argument('--caption-type', type=str, default='EVAL',
+    parser.add_argument('-c', '--caption-type', type=str, default='EVAL',
                         help='type of select caption in training data.\n \
                             set "RANDOM" to select random one caption for each image in traning.\n \
                             set "FULL" to select all five caption and duplicate image five times for five cases.'
                         )
-    parser.add_argument('--ckpt', type=str, default='./ckpt/b32_e4-15_bleu.ckpt',
+    parser.add_argument('-ckpt', '--checkpoint_path', type=str, default='./ckpt/b32_e4-15_bleu.ckpt',
                         help='path to model checkpoint')
     args = parser.parse_args()
     evaluation(args) 
