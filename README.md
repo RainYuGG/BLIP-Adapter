@@ -8,6 +8,29 @@ Load the image from [Rico UI Screenshots and View Hierarchies dataset](https://s
 git clone --recursive https://github.com/RainYuGG/image-captioning-based-on-Screen2Words.git
 ```
 
+## Requirement
+
+
+
+
+## Train
+
+```
+python train.py --img-dir /path/to/rico --s2w-dir /path/to/screen2words -e 30 -b 32 -p 15
+```
+
+## Evaluation
+
+```
+python eval.py -ckpt /path/to/checkpoint
+```
+
+## Generate Caption
+
+```
+python generater.py --img-dir /path/to/rico python train.py -ckpt /path/to/checkpoint --image_id 54137
+```
+
 ## Install coco-caption
 To properly obtain the CIDEr Score in `eval.py`, you need to install the coco_caption package. Follow the steps below to install it:
 
