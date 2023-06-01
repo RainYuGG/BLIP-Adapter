@@ -30,7 +30,7 @@ class BlipCaption(BlipBase):
         - https://storage.googleapis.com/sfr-vision-language-research/LAVIS/models/BLIP/blip_coco_caption_base.pth
     """
     
-    def __init__(self,vit_type='base', med_config_path='configs/med_config.json', prompt=None, max_txt_len=40):
+    def __init__(self,vit_type='base', med_config_path='configs/med_config.json',adapter_type=None, prompt=None, max_txt_len=40):
         super().__init__()
         self.tokenizer = self.init_tokenizer()    
         # vision encoder
@@ -209,18 +209,4 @@ class BlipCaption(BlipBase):
         model = cls(image_encoder, text_decoder, prompt=prompt, max_txt_len=max_txt_len)
         model.load_checkpoint_from_config(cfg)
 
-        return model
-    
-    def set_requires_grad(self, nets, requires_grad=False):
-        """Set requies_grad=Fasle for all the networks to avoid unnecessary computations
-        Parameters:
-            nets (network list)   -- a list of networks
-            requires_grad (bool)  -- whether the networks require gradients or not
-        """
-        if not isinstance(nets, list):
-            nets = [nets]
-        for net in nets:
-            if net is not None:
-                for param in net.parameters():
-                    param.requires_grad = requires_grad
-    
+        return model    

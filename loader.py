@@ -14,6 +14,15 @@ def load_model(model_name: str):
     model = models.make(config['model']).cuda()
     if(model_name == 'blip_caption'):
         model.load_checkpoint(config['model']['checkpoint_url'])
+
+    # freeze all parameters except prompt and language model
+    if config['model']['args']['adapter_type'] is not None:
+        for name, param in model.named_parameters():
+            if "prompt" not in name and "text" not in name:
+                param.requires_grad_(False)
+            else:
+                print(name)
+                
     return model
 
 

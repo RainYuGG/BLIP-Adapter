@@ -180,6 +180,7 @@ class VisionTransformer(nn.Module):
         norm_layer: Optional[nn.Module]=None,
         use_grad_checkpointing=False,
         ckpt_layer=0,
+        adapter_type=None,
     ):
         """
         Args:
@@ -243,13 +244,15 @@ class VisionTransformer(nn.Module):
         self.norm = norm_layer(embed_dim)
 
         # Prompt Layers
-        self.prompt_generator = PromptGenerator(
-            img_size=img_size, 
-            patch_size=patch_size,
-            in_chans=in_chans,
-            embed_dim=embed_dim,
-            depth=depth,
-        )
+        self.adapter_type = adapter_type
+        if(self.adapter_type == 'vit'):
+            self.prompt_generator = PromptGenerator(
+                img_size=img_size, 
+                patch_size=patch_size,
+                in_chans=in_chans,
+                embed_dim=embed_dim,
+                depth=depth,
+            )
 
         trunc_normal_(self.pos_embed, std=0.02)
         trunc_normal_(self.cls_token, std=0.02)
@@ -269,9 +272,10 @@ class VisionTransformer(nn.Module):
         return {"pos_embed", "cls_token"}
 
     def forward(self, x, register_blk=-1):
-        # Prompt embedding with grayscale
-        handcrafted_feature = self.prompt_generator.init_handcrafted(x)
-        
+        if(self.adapter_type == 'vit'):
+            # Prompt embedding with grayscale
+            handcrafted_feature = self.prompt_generator.init_handcrafted(x)
+            
         B = x.shape[0]
         x = self.patch_embed(x)
 
@@ -283,21 +287,23 @@ class VisionTransformer(nn.Module):
         x = x + self.pos_embed[:, : x.size(1), :]
         x = self.pos_drop(x)
 
-        # use the same cls_tokens impl to fit the original x shape
-        handcrafted_feature = torch.cat((cls_tokens, handcrafted_feature), dim=1)
-        handcrafted_feature = handcrafted_feature + self.pos_embed[:, : handcrafted_feature.size(1), :]
-        handcrafted_feature = self.pos_drop(handcrafted_feature)
-        handcrafted_feature = self.prompt_generator.handcrafted_embed_helper(handcrafted_feature)
+        if(self.adapter_type == 'vit'):
+            # use the same cls_tokens impl to fit the original x shape
+            handcrafted_feature = torch.cat((cls_tokens, handcrafted_feature), dim=1)
+            handcrafted_feature = handcrafted_feature + self.pos_embed[:, : handcrafted_feature.size(1), :]
+            handcrafted_feature = self.pos_drop(handcrafted_feature)
+            handcrafted_feature = self.prompt_generator.handcrafted_embed_helper(handcrafted_feature)
 
-        # get original embedding feature, and downsample the features to get prompt embedding feature
-        embedding_feature = self.prompt_generator.init_embeddings(x)
+            # get original embedding feature, and downsample the features to get prompt embedding feature
+            embedding_feature = self.prompt_generator.init_embeddings(x)
 
-        prompts = self.prompt_generator.get_prompt(handcrafted_feature, embedding_feature)
+            prompts = self.prompt_generator.get_prompt(handcrafted_feature, embedding_feature)
 
         for i, blk in enumerate(self.blocks):
-            # assert with error message to find where the error is
-            assert x.shape == prompts[i].shape, "prompt shape {} should be the same as x shape {}".format(prompts[i].shape, x.shape)
-            x = prompts[i] + x
+            if(self.adapter_type == 'vit'):
+                # assert with error message to find where the error is
+                assert x.shape == prompts[i].shape, "prompt shape {} should be the same as x shape {}".format(prompts[i].shape, x.shape)
+                x = prompts[i] + x
             x = blk(x, register_blk == i)
         x = self.norm(x)
 
@@ -480,7 +486,7 @@ def interpolate_pos_embed(pos_embed_checkpoint, visual_encoder):
 
 class VisionTransformerEncoder(VisionTransformer, BaseEncoder):
     @classmethod
-    def from_config(cls, vit_type='base', from_pretrained=False):
+    def from_config(cls, vit_type='base', adapter_type = None, from_pretrained=False):
         image_size = 384
         ckpt_layer = 0
         drop_path_rate = 0
@@ -506,6 +512,7 @@ class VisionTransformerEncoder(VisionTransformer, BaseEncoder):
                 ckpt_layer=ckpt_layer,
                 drop_path_rate=0 or drop_path_rate,
                 norm_layer=norm_layer,
+                adapter_type=adapter_type,
             )
 
             if from_pretrained:
@@ -532,6 +539,7 @@ class VisionTransformerEncoder(VisionTransformer, BaseEncoder):
                 ckpt_layer=ckpt_layer,
                 drop_path_rate=0.1 or drop_path_rate,
                 norm_layer=norm_layer,
+                adapter_type=adapter_type,
             )
             if from_pretrained:
                 from timm.models.helpers import load_custom_pretrained

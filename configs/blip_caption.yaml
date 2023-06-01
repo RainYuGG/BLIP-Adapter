@@ -7,10 +7,12 @@ model:
   name: blip_caption
   args:
     max_txt_len: 20
+    # adapter
+    adapter_type: "vit"
     # vit encoder
     vit_type: "base"
     # bert config
     med_config_path: "configs/med_config.json"
     # generation configs
-    prompt: "a picture of "
+    prompt: "a screenshot of "
   checkpoint_url: "https://storage.googleapis.com/sfr-vision-language-research/LAVIS/models/BLIP/blip_coco_caption_base.pth"
