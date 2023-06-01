@@ -16,7 +16,7 @@ def load_model(model_name: str):
         model.load_checkpoint(config['model']['checkpoint_url'])
 
     # freeze all parameters except prompt and language model
-    if config['model']['args']['adapter_type'] is not None:
+    if 'adapter_type' in config['model']['args'].keys():
         for name, param in model.named_parameters():
             if "prompt" not in name and "text" not in name:
                 param.requires_grad_(False)

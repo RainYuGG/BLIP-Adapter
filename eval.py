@@ -24,6 +24,7 @@ def evaluation(args):
 
     # initialize model & tokenizer define
     model = load_model(args.model)
+    
     # load checkpoint
     if args.checkpoint_path is not None:
         model.load_state_dict(torch.load(args.checkpoint_path))

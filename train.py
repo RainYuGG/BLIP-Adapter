@@ -149,7 +149,7 @@ if __name__ == '__main__':
                         help='debug mode for testing code')
     parser.add_argument('--lr', type=float, default=5e-5,
                         help='learning rate during training')
-    parser.add_argument('-e', '--num-epochs', type=int, default=10,
+    parser.add_argument('-e', '--num-epochs', type=int, default=30,
                         help='number of training epochs')
     parser.add_argument('-b', '--batch-size', type=int, default=32,
                         help='batch size during training')

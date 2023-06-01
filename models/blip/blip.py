@@ -34,7 +34,7 @@ class BlipCaption(BlipBase):
         super().__init__()
         self.tokenizer = self.init_tokenizer()    
         # vision encoder
-        self.visual_encoder = VisionTransformerEncoder.from_config(vit_type = vit_type)
+        self.visual_encoder = VisionTransformerEncoder.from_config(vit_type = vit_type, adapter_type=adapter_type)
         # text encoder + multimodal decoder
         self.text_decoder = XBertLMHeadDecoder.from_config(med_config_path, False)
 
