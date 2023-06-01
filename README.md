@@ -1,16 +1,18 @@
 # image captioning based on Screen2Words
-image-to-text on Android screenshot
-
-Load the image from [Rico UI Screenshots and View Hierarchies dataset](https://storage.googleapis.com/crowdstf-rico-uiuc-4540/rico_dataset_v0.1/unique_uis.tar.gz) and the summary from [Screen2Words dataset](https://github.com/google-research-datasets/screen2words), and deal with the same split within Screen2Words.
 
 ## Download repo
 ```
 git clone --recursive https://github.com/RainYuGG/image-captioning-based-on-Screen2Words.git
 ```
 
-## Requirement
+## Build Environment & Requirement
 
+* Use conda to build the environment
+```
+conda env create -f environment.yml
+```
 
+* Install [coco-caption](#install-coco-caption) for evaluation (BLEU, CIDEr).
 
 
 ## Train
@@ -31,10 +33,12 @@ python eval.py -ckpt /path/to/checkpoint
 python generater.py --img-dir /path/to/rico python train.py -ckpt /path/to/checkpoint --image_id 54137
 ```
 
-## Install coco-caption
+##
+
+### Install coco-caption
 To properly obtain the CIDEr Score in `eval.py`, you need to install the coco_caption package. Follow the steps below to install it:
 
-### 1. Install the model
+#### 1. Install the model
 Clone the `coco_caption` repository and navigate to the cloned directory:
 ```bash 
 cd coco_caption
@@ -42,8 +46,8 @@ bash get_stanford_models.sh
 pip install gensim
 ```
 
-### 2. Install java
-1. Download the latest version of Java 8 from the Oracle website: https://www.oracle.com/java/technologies/downloads/#java8
+#### 2. Install java
+1. Download the latest version of Java 8 from the Oracle website: [Java 8](https://www.oracle.com/java/technologies/downloads/#java8)
 2. Copy the downloaded file to your system and extract it with the following commands:
 ```bash
 sudo cp jdk-xxxxx_linux-x64_bin.tar.gz /opt
@@ -69,13 +73,13 @@ source ~/.bashrc
 java -version
 ```
 
-### 3. Install WMD
+#### 3. Install WMD
 To install WMD, run the following command:
 ```bash
 bash get_google_word2vec_model.sh
 ```
 
-### 4. Demo
+#### 4. Demo
 To run the demo, execute the following command:
 ```bash
 python scorer.py
@@ -85,8 +89,8 @@ Make sure to run the demo after the installation to confirm that everything work
 
 ## reference
 
-#### dataset
+### dataset
 
-[Rico](https://interactionmining.org/rico)
+[Rico](https://interactionmining.org/rico) / [Rico UI Screenshots and View Hierarchies dataset](https://storage.googleapis.com/crowdstf-rico-uiuc-4540/rico_dataset_v0.1/unique_uis.tar.gz)
 
 Screen2Words: [paper](https://arxiv.org/abs/2108.03353) / [code](https://github.com/google-research/google-research/tree/master/screen2words) / [dataset](https://github.com/google-research-datasets/screen2words)
