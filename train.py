@@ -63,7 +63,7 @@ def train(args):
 
     #%%
     with open(f"./log/{args.exp_name}_bs{bs}_{args.caption_type}_log.txt","a") as f:
-        f.write(f"bs = {bs}({args.batch_size}*{args.accumulation_steps}), num_epoch = {args.num_epochs}\n, lr = {args.lr}, patience = {args.patience}\n")
+        f.write(f"bs = {bs}({args.batch_size}*{args.accumulation_steps}), num_epoch = {args.num_epochs}\n, lr = {args.lr}, patience = {args.patience}\nprompt = {model.prompt}\n")
 
     for epoch in range(args.num_epochs):
         # ---------- Training ----------
