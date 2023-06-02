@@ -16,15 +16,15 @@ def load_model(model_name: str):
         model.load_checkpoint(config['model']['checkpoint_url'])
 
     # freeze all parameters except prompt and language model
-    for name, param in model.named_parameters():
-        if 'adapter_type' in config['model']['args'].keys() and "prompt" in name:
-            print(name)
-        elif config['model']['args']['tune_language'] and "text" not in name:
-            print(name)
-        else:
-            param.requires_grad_(False)
-            
-                
+    if config['model']['tune_args']['tune_language']:
+        for name, param in model.named_parameters():
+            if 'adapter_type' in config['model']['args'].keys() and "prompt" in name:
+                print(name)
+            elif config['model']['tune_args']['tune_language'] and "text" in name:
+                print(name)
+            else:
+                param.requires_grad_(False)
+
     return model
 
 

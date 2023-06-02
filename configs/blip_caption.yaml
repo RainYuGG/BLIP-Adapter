@@ -14,7 +14,8 @@ model:
     # bert config
     med_config_path: "configs/med_config.json"
     # tune language model or not
-    tune_language: true
     # generation configs
     prompt: "a screenshot of "
   checkpoint_url: "https://storage.googleapis.com/sfr-vision-language-research/LAVIS/models/BLIP/blip_coco_caption_base.pth"
+  tune_args:
+    tune_language: true
