@@ -21,13 +21,13 @@ class PromptGenerator(nn.Module):
         embed_dim: int = 768,
         depth: int = 12,
         scale_factor: int = 32,
-        prompt_type: str = "half"
+        adapter_type: str = "vit"
     ):
         super().__init__()
         self.embed_dim = embed_dim
         self.scale_factor = scale_factor
         self.depth = depth
-
+        self.adapter_type = adapter_type
         self.patch_embed = PatchEmbed(
             img_size=img_size,
             patch_size=patch_size,
@@ -81,7 +81,8 @@ class PromptGenerator(nn.Module):
         return self.embedding_generator(x)
     
     def init_handcrafted(self, x):
-        x = self.rgb2gray(x)
+        if self.adapter_type == "vit_grayscale":
+            x = self.rgb2gray(x)
         return self.patch_embed(x)
 
     # def forward(self, x: torch.Tensor) -> torch.Tensor:
