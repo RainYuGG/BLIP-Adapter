@@ -16,16 +16,28 @@ def load_model(model_name: str):
         model.load_checkpoint(config['model']['checkpoint_url'])
 
     # freeze all parameters except prompt and language model
-    if config['model']['tune_args']['tune_language']:
+    if 'adapter_type' in config['model']['args'] or config['model']['tune_args']['tune_language']:
         for name, param in model.named_parameters():
-            if 'adapter_type' in config['model']['args'].keys() and "prompt" in name:
-                print(name)
-            elif config['model']['tune_args']['tune_language'] and "text" in name:
+            # train either vit adapter or language model
+            if ('adapter_type' in config['model']['args'] and "prompt" in name) or \
+                (config['model']['tune_args']['tune_language'] and "text" in name):
                 print(name)
             else:
                 param.requires_grad_(False)
 
+
     return model
+
+def print_trainable_parameters(model):
+    trainable_params = 0
+    all_param = 0
+    for _, param in model.named_parameters():
+        all_param += param.numel()
+        if param.requires_grad:
+            trainable_params += param.numel()
+    print(
+        f"trainable params: {trainable_params} || all params: {all_param} || trainable%: {100 * trainable_params / all_param:.2f}"
+    )
 
 
 if __name__ == "__main__":
@@ -39,7 +51,7 @@ if __name__ == "__main__":
     image = vis_processors["eval"](raw_image).unsqueeze(0).to(device)
 
     model = load_model('blip_caption')
-
+    print_trainable_parameters(model)
     # Print the model architecture
     # print(model)
 
