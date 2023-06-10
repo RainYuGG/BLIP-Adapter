@@ -55,15 +55,15 @@ def train(args):
 
     # Define the loss function and optimizer
     # criterion = nn.CrossEntropyLoss()
-    # optimizer = optim.Adam(params, lr=args.lr)
-    optimizer = torch.optim.AdamW(params=model.parameters(), lr=args.lr) #, weight_decay=weight_decay)
+    # optimizer = optim.Adam(params, lr=args.learning_rate)
+    optimizer = torch.optim.AdamW(params=model.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay)
     num_training_steps = len(train_loader) / args.accumulation_steps * args.num_epochs 
     num_warmup_steps = int(0.1 * num_training_steps)
     scheduler = get_cosine_schedule_with_warmup(optimizer, num_warmup_steps=num_warmup_steps, num_training_steps=num_training_steps)
 
     #%%
     with open(f"./log/{args.exp_name}_bs{bs}_{args.caption_type}_log.txt","a") as f:
-        f.write(f"bs = {bs}({args.batch_size}*{args.accumulation_steps}), num_epoch = {args.num_epochs}\n, lr = {args.lr}, patience = {args.patience}\nprompt = {model.prompt}\n")
+        f.write(f"bs = {bs}({args.batch_size}*{args.accumulation_steps}), num_epoch = {args.num_epochs},\nlr = {args.learning_rate}, wd = {args.weight_decay},\npatience = {args.patience}, prompt = {model.prompt}\n")
 
     for epoch in range(args.num_epochs):
         # ---------- Training ----------
@@ -147,8 +147,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--debug', type=bool, default=0,
                         help='debug mode for testing code')
-    parser.add_argument('--lr', type=float, default=5e-5,
+    parser.add_argument('-lr','--learning-rate' , type=float, default=5e-5,
                         help='learning rate during training')
+    parser.add_argument('-wd', '--weight-decay', type=float, default=0.1,
+                        help='weight decay during training')
     parser.add_argument('-e', '--num-epochs', type=int, default=30,
                         help='number of training epochs')
     parser.add_argument('-b', '--batch-size', type=int, default=32,
