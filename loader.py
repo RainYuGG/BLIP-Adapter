@@ -3,38 +3,76 @@ import os
 import requests
 import yaml
 import torch
-from typing import Optional, Dict, Any
+import torch.nn as nn
+from typing import Union, List
 from PIL import Image
 import models
+from transformers.adapters import LoRAConfig, AdapterConfig
 
-
-def load_model(model_name: str):
+def load_model(model_name: str, isTrain: bool = False):
     with open(os.path.join('configs/', model_name + '.yaml'), 'r') as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
     model = models.make(config['model']).cuda()
     if(model_name == 'blip_caption'):
         model.load_checkpoint(config['model']['checkpoint_url'])
 
-    # freeze all parameters except prompt and language model
-    if 'adapter_type' in config['model']['args'] or config['model']['tune_args']['tune_language']:
-        for name, param in model.named_parameters():
-            # train either vit adapter or language model
-            if ('adapter_type' in config['model']['args'] and "prompt" in name) or \
-                (config['model']['tune_args']['tune_language'] and "text" in name):
-                print(name)
-            else:
-                param.requires_grad_(False)
+    trainable_name = []
 
+    if 'adapter_type' in config['model']['args']:
+        trainable_name.append('prompt')
+
+    # load adapter to bert
+    if 'bert_adapter' in config['model']:
+        bert_adapter = config['model']['bert_adapter']
+        trainable_name.append(bert_adapter)
+        load_adapter(model, bert_adapter)
+        if isTrain:
+            model.text_decoder.train_adapter(bert_adapter)
+
+    if 'tune_language' in config['model'] and config['model']['tune_language']:
+        trainable_name.append('text_decoder')
+    
+    if len(trainable_name) != 0:
+        freeze_parameters(model, trainable_name)
+
+    print_trainable_parameters(model, True)
+
+    print("-" * 20)
 
     return model
 
-def print_trainable_parameters(model):
+def load_adapter(model: nn.Module, bert_adapter: str):
+    # load adapter config for language model
+    if bert_adapter == "bottleneck_adapter":
+        config = AdapterConfig(mh_adapter=True, output_adapter=True, reduction_factor=16, non_linearity="relu")
+        model.text_decoder.add_adapter(bert_adapter, config=config)
+    #load LoRA config for language model
+    elif bert_adapter == "lora_adapter":
+        config = LoRAConfig(r=8, alpha=16)
+        model.text_decoder.add_adapter(bert_adapter, config=config)
+
+
+def freeze_parameters(model: nn.Module, trainable_name: Union[str, List[str]]):
+    if isinstance(trainable_name, str):
+        trainable_name = [trainable_name]
+    for name, param in model.named_parameters():
+        # train either vit adapter or language model
+        if any(n in name for n in trainable_name):
+            continue
+            # print(name)
+        else:
+            param.requires_grad_(False)
+
+
+def print_trainable_parameters(model: nn.Module, show_trained_param: bool = False):
     trainable_params = 0
     all_param = 0
-    for _, param in model.named_parameters():
+    for name, param in model.named_parameters():
         all_param += param.numel()
         if param.requires_grad:
             trainable_params += param.numel()
+            if show_trained_param:
+                print(name)
     print(
         f"trainable params: {trainable_params} || all params: {all_param} || trainable%: {100 * trainable_params / all_param:.2f}"
     )
@@ -51,7 +89,6 @@ if __name__ == "__main__":
     image = vis_processors["eval"](raw_image).unsqueeze(0).to(device)
 
     model = load_model('blip_caption')
-    print_trainable_parameters(model)
     # Print the model architecture
     # print(model)
 
@@ -61,4 +98,3 @@ if __name__ == "__main__":
     # generate caption
     caption = model.generate({"image": image})
     print(caption)
-#%%

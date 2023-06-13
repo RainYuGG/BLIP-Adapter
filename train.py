@@ -3,7 +3,6 @@ import os
 import torch
 from torch.utils.data import DataLoader
 from transformers import get_cosine_schedule_with_warmup
-from lavis.models import load_model_and_preprocess
 import numpy as np
 import random
 import argparse
@@ -31,7 +30,7 @@ def train(args):
     best_score = 0.0
 
     # load model
-    model = load_model(args.model)
+    model = load_model(args.model, isTrain=True)
 
     # load checkpoint
     if args.checkpoint_path:
