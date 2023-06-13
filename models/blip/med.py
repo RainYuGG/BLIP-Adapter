@@ -27,6 +27,7 @@ from transformers.modeling_outputs import (
     
 )
 from transformers.models.bert.configuration_bert import BertConfig
+from transformers.adapters.context import ForwardContext
 from transformers.adapters.lora import Linear as LoRALinear
 from transformers.adapters.prefix_tuning import PrefixTuningShim
 from transformers.adapters.mixins.bert import (
@@ -829,7 +830,8 @@ class BertModel(BertModelAdaptersMixin, BertPreTrainedModel):
         )  # fp16 compatibility
         extended_attention_mask = (1.0 - extended_attention_mask) * -10000.0
         return extended_attention_mask
-
+    
+    @ForwardContext.wrap
     def forward(
         self,
         input_ids=None,
