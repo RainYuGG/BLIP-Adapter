@@ -7,15 +7,17 @@ model:
   name: blip_caption
   args:
     max_txt_len: 20
-    # adapter
-    # adapter_type: "vit"
-    # vit encoder
+# vit encoder
     vit_type: "base"
-    # bert config
+# bert config
     med_config_path: "configs/med_config.json"
-    # tune language model or not
-    # generation configs
+# generation configs
     prompt: "a picture of "
-  checkpoint_url: "https://storage.googleapis.com/sfr-vision-language-research/LAVIS/models/BLIP/blip_coco_caption_base.pth"
-  tune_args:
-    tune_language: false
+# argument for partial tuning
+# vit adapter ("vit", "vit_grayscale")
+    # adapter_type: "vit"
+# bert adapter ("bottleneck_adapter", "lora_adapter", or others in adapterhub)
+  bert_adapter: "bottleneck_adapter"
+# tune whole language model or not
+  # tune_language: false
+  checkpoint_url: "https://storage.googleapis.com/sfr-vision-language-research/LAVIS/models/BLIP/blip_coco_caption_base.pth"  
