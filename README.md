@@ -14,6 +14,18 @@ conda env create -f environment.yml
 
 * Install [coco-caption](#install-coco-caption) for evaluation (BLEU, CIDEr).
 
+## Config file
+
+Here are some arguments of partial tuning from the configuration file that are used to build the BLIP adapter model.
+
+* ```adapter_type: "vit"``` : vit adapter ("vit", "vit_grayscale")
+     
+* ```bert_adapter: "bottleneck_adapter"``` : bert adapter ("bottleneck_adapter", "lora_adapter", or other implementations in adapterhub)
+
+    * if you want to use other implementations in adapterhub, you need to simply modify the code in ```loader.py```
+  
+* ```tune_language: false``` : tune whole language model or not (True or False)
+
 
 ## Train
 
