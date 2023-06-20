@@ -23,13 +23,15 @@ def evaluation(args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # initialize model & tokenizer define
-    model = load_model(args.model)
+    model = load_model(args.model, isTrain=False)
     
     # load checkpoint
     if args.checkpoint_path is not None:
         model.load_state_dict(torch.load(args.checkpoint_path))
         print(f"Load checkpoint from {args.checkpoint_path}")
 
+    model.to(device)
+    
     # training preprocessor
     import tfm
     vis_processors = tfm.tfm()

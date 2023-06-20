@@ -15,9 +15,9 @@ model:
     prompt: "a picture of "
 # argument for partial tuning
 # vit adapter ("vit", "vit_grayscale")
-    # adapter_type: "vit"
-# bert adapter ("bottleneck_adapter", "lora_adapter", or others in adapterhub)
-  bert_adapter: "bottleneck_adapter"
+    adapter_type: "vit"
+# bert adapter ("bottleneck_adapter", "lora_adapter", "prefix_tuning", "unipelt" , or others in adapterhub)
+    bert_adapter: "bottleneck_adapter"
 # tune whole language model or not
-  # tune_language: false
-  checkpoint_url: "https://storage.googleapis.com/sfr-vision-language-research/LAVIS/models/BLIP/blip_coco_caption_base.pth"  
+    # tune_language: true
+  checkpoint_url: "https://storage.googleapis.com/sfr-vision-language-research/LAVIS/models/BLIP/blip_coco_caption_base.pth"
