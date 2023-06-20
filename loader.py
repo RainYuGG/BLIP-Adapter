@@ -7,7 +7,7 @@ import torch.nn as nn
 from typing import Union, List
 from PIL import Image
 import models
-from transformers.adapters import LoRAConfig, AdapterConfig
+from transformers.adapters import LoRAConfig, AdapterConfig, PrefixTuningConfig, UniPELTConfig
 
 def load_model(model_name: str, isTrain: bool = False):
     with open(os.path.join('configs/', model_name + '.yaml'), 'r') as f:
@@ -18,24 +18,32 @@ def load_model(model_name: str, isTrain: bool = False):
 
     trainable_name = []
 
+    VLbridge = False
     if 'adapter_type' in config['model']['args']:
         trainable_name.append('prompt')
 
     # load adapter to bert
-    if 'bert_adapter' in config['model']:
-        bert_adapter = config['model']['bert_adapter']
+    if 'bert_adapter' in config['model']['args']:
+        bert_adapter = config['model']['args']['bert_adapter']
         trainable_name.append(bert_adapter)
         load_adapter(model, bert_adapter)
         if isTrain:
             model.text_decoder.train_adapter(bert_adapter)
+        else:
+            model.text_decoder.set_active_adapters(bert_adapter)
+        VLbridge = True
 
-    if 'tune_language' in config['model'] and config['model']['tune_language']:
+    if 'tune_language' in config['model']['args'] and config['model']['args']['tune_language']:
         trainable_name.append('text_decoder')
+        VLbridge = True
     
+    if VLbridge:
+        trainable_name.append('VLBridge')
+
     if len(trainable_name) != 0:
         freeze_parameters(model, trainable_name)
 
-    print_trainable_parameters(model, True)
+    print_trainable_parameters(model, isTrain)
 
     print("-" * 20)
 
@@ -49,6 +57,12 @@ def load_adapter(model: nn.Module, bert_adapter: str):
     #load LoRA config for language model
     elif bert_adapter == "lora_adapter":
         config = LoRAConfig(r=8, alpha=16)
+        model.text_decoder.add_adapter(bert_adapter, config=config)
+    elif bert_adapter == "prefix_tuning":
+        config = PrefixTuningConfig()
+        model.text_decoder.add_adapter(bert_adapter, config=config)
+    elif bert_adapter == "unipelt":
+        config = UniPELTConfig()
         model.text_decoder.add_adapter(bert_adapter, config=config)
 
 
@@ -88,7 +102,8 @@ if __name__ == "__main__":
     vis_processors = tfm.tfm()
     image = vis_processors["eval"](raw_image).unsqueeze(0).to(device)
 
-    model = load_model('blip_caption')
+    model = load_model('blip_caption', True)
+    model.to(device)
     # Print the model architecture
     # print(model)
 
