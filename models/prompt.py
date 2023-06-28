@@ -28,6 +28,7 @@ class PromptGenerator(nn.Module):
         self.scale_factor = scale_factor
         self.depth = depth
         self.adapter_type = adapter_type
+        print("adapter_type: ", self.adapter_type)
         self.patch_embed = PatchEmbed(
             img_size=img_size,
             patch_size=patch_size,
@@ -77,12 +78,37 @@ class PromptGenerator(nn.Module):
         x = transforms.Grayscale(num_output_channels=3)(x)
         return x
     
+    def fft(self, x, rate):
+        # the smaller rate, the smoother; the larger rate, the darker
+        # rate = 4, 8, 16, 32
+        mask = torch.zeros(x.shape).to(x.device)
+        w, h = x.shape[-2:]
+        line = int((w * h * rate) ** .5 // 2)
+        mask[:, :, w//2-line:w//2+line, h//2-line:h//2+line] = 1
+
+        fft = torch.fft.fftshift(torch.fft.fft2(x, norm="forward"))
+        # mask[fft.float() > self.freq_nums] = 1
+        # high pass: 1-mask, low pass: mask
+        fft = fft * (1 - mask)
+        # fft = fft * mask
+        fr = fft.real
+        fi = fft.imag
+
+        fft_hires = torch.fft.ifftshift(torch.complex(fr, fi))
+        inv = torch.fft.ifft2(fft_hires, norm="forward").real
+
+        inv = torch.abs(inv)
+
+        return inv
+    
     def init_embeddings(self, x):
         return self.embedding_generator(x)
     
     def init_handcrafted(self, x):
         if self.adapter_type == "vit_grayscale":
             x = self.rgb2gray(x)
+        if self.adapter_type == "vit_fft":
+            x = self.fft(x, rate=0.25)
         return self.patch_embed(x)
 
     # def forward(self, x: torch.Tensor) -> torch.Tensor:

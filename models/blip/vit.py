@@ -245,13 +245,14 @@ class VisionTransformer(nn.Module):
 
         # Prompt Layers
         self.adapter_type = adapter_type
-        if(self.adapter_type == 'vit' or self.adapter_type == 'vit_grayscale'):
+        if self.adapter_type is not None:
             self.prompt_generator = PromptGenerator(
                 img_size=img_size, 
                 patch_size=patch_size,
                 in_chans=in_chans,
                 embed_dim=embed_dim,
                 depth=depth,
+                adapter_type=adapter_type,
             )
 
         trunc_normal_(self.pos_embed, std=0.02)
@@ -272,7 +273,7 @@ class VisionTransformer(nn.Module):
         return {"pos_embed", "cls_token"}
 
     def forward(self, x, register_blk=-1):
-        if(self.adapter_type == 'vit' or self.adapter_type == 'vit_grayscale'):
+        if self.adapter_type is not None:
             # Prompt embedding with handcrafted features
             handcrafted_feature = self.prompt_generator.init_handcrafted(x)
             
@@ -287,7 +288,7 @@ class VisionTransformer(nn.Module):
         x = x + self.pos_embed[:, : x.size(1), :]
         x = self.pos_drop(x)
 
-        if(self.adapter_type == 'vit' or self.adapter_type == 'vit_grayscale'):
+        if self.adapter_type is not None:
             # use the same cls_tokens impl to fit the original x shape
             handcrafted_feature = torch.cat((cls_tokens, handcrafted_feature), dim=1)
             handcrafted_feature = handcrafted_feature + self.pos_embed[:, : handcrafted_feature.size(1), :]
@@ -300,7 +301,7 @@ class VisionTransformer(nn.Module):
             prompts = self.prompt_generator.get_prompt(handcrafted_feature, embedding_feature)
 
         for i, blk in enumerate(self.blocks):
-            if(self.adapter_type == 'vit' or self.adapter_type == 'vit_grayscale'):
+            if self.adapter_type is not None:
                 # assert with error message to find where the error is
                 assert x.shape == prompts[i].shape, "prompt shape {} should be the same as x shape {}".format(prompts[i].shape, x.shape)
                 x = prompts[i] + x
