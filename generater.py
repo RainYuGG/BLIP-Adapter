@@ -6,6 +6,7 @@ from lavis.models import load_model_and_preprocess
 from PIL import Image
 # own processing implementation
 import tfm
+from loader import load_model
 
 def generate_caption(args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -22,8 +23,10 @@ def generate_caption(args):
     image = image.to(device)
 
     # loads BLIP caption base mode
-    model, _ , _ = load_model_and_preprocess(name="blip_caption", model_type="base_coco", is_eval=True, device=device)
-    model.load_state_dict(torch.load(args.ckpt))
+    model = load_model(args.model, isTrain=False)
+    if args.checkpoint_path is not None:
+        model.load_state_dict(torch.load(args.checkpoint_path))
+        print(f"Load checkpoint from {args.checkpoint_path}")
     model.to(device)
     model.eval()
 
@@ -35,7 +38,9 @@ def generate_caption(args):
     # %%
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--ckpt', type=str, default='./ckpt/64/b+c_bs64_FULL.ckpt',
+    parser.add_argument('-m', '--model', type=str, default='blip_caption',
+                        help='model name')
+    parser.add_argument('-ckpt', '--checkpoint_path', type=str, default='./ckpt/b32_e4-15_bleu.ckpt',
                         help='path to model checkpoint')
     parser.add_argument('--img-dir', type=str, default='/data/rico/combined/',
                         help='image directory where Rico dataset is stored')
