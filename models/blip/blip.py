@@ -30,7 +30,7 @@ class BlipCaption(BlipBase):
         - https://storage.googleapis.com/sfr-vision-language-research/LAVIS/models/BLIP/blip_coco_caption_base.pth
     """
     
-    def __init__(self,vit_type='base', med_config_path='configs/med_config.json',adapter_type=None, bert_adapter=None, tune_language=None, prompt=None, max_txt_len=40):
+    def __init__(self,vit_type='base', med_config_path='configs/med_config.json',adapter_type=None, bert_adapter=None, visual_projection=None, tune_language=None, prompt=None, max_txt_len=40):
         super().__init__()
         self.tokenizer = self.init_tokenizer()    
         # vision encoder
@@ -46,8 +46,12 @@ class BlipCaption(BlipBase):
         self.bert_adapter = bert_adapter
         self.tune_language = tune_language
         # if((self.bert_adapter or self.tune_language) and self.adapter_type == None):
-        #     self.VLBridge = nn.Linear(768, 768)
-        #     self.VLBridge = Block(dim=768,num_heads=12,)
+        if visual_projection == "linear":
+            self.VLBridge = nn.Linear(768, 768)
+        elif visual_projection == "ViT_block":
+            self.VLBridge = Block(dim=768,num_heads=12,)
+        else:
+            self.VLBridge = None
 
     def forward_encoder(self, samples):
         image_embeds = self.visual_encoder.forward_features(samples["image"])
@@ -119,8 +123,8 @@ class BlipCaption(BlipBase):
         ```"""
 
         image_embeds = self.forward_encoder(samples)
-        # if(self.bert_adapter or self.tune_language):
-        #     image_embeds = self.VLBridge(image_embeds)
+        if self.VLBridge != None:
+            image_embeds = self.VLBridge(image_embeds)
         decoder_output, decoder_targets = self.forward_decoder(samples, image_embeds)
 
         # return decoder_out
@@ -178,8 +182,8 @@ class BlipCaption(BlipBase):
         """
         # prepare inputs for decoder generation.
         encoder_out = self.forward_encoder(samples)
-        # if(self.bert_adapter or self.tune_language):
-        #     encoder_out = self.VLBridge(encoder_out)
+        if self.VLBridge != None:
+            encoder_out = self.VLBridge(encoder_out)
         image_embeds = torch.repeat_interleave(encoder_out, num_captions, 0)
 
         prompt = [self.prompt] * image_embeds.size(0)
