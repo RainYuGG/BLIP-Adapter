@@ -40,7 +40,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-m', '--model', type=str, default='blip_caption',
                         help='model name')
-    parser.add_argument('-ckpt', '--checkpoint_path', type=str, default='./ckpt/b32_e4-15_bleu.ckpt',
+    parser.add_argument('-ckpt', '--checkpoint_path', type=str, default='./ckpt/VLbridege-transformer-lang-lora_bs32_FULL.ckpt',
                         help='path to model checkpoint')
     parser.add_argument('--img-dir', type=str, default='/data/rico/combined/',
                         help='image directory where Rico dataset is stored')
